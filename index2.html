@@ -53,6 +53,7 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
+const S1_SPD_MULT = IS_TOUCH ? 2.0 : 0.5; // Stage1専用乗数（PC=0.5、スマホ=2.0）
 const S2_SPD_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2専用乗数
 const S2_CAP_MULT = 1.0; // Stage2カプセル追加乗数
 
@@ -63,12 +64,12 @@ let winPhase = 0, winTick = 0, pipeY = 0;
 function newGame1() {
   gs = {
     stageNum: 1,
-    tship: { x: W/2, y: 18, dx: 1, spd: TSHIP_DX * SPD_MULT * 0.5 },
+    tship: { x: W/2, y: 18, dx: 1, spd: TSHIP_DX * S1_SPD_MULT * 0.5 },
     bship: { x: W/2, y: H - 18 },
     astro: { x: W/2, y: H - 30 },
     caps:  [],
     score: 0, miss: 0,
-    baseSpeed: S1_SPD_BASE * SPD_MULT,
+    baseSpeed: S1_SPD_BASE * S1_SPD_MULT,
     spawnTick: 0, spawnInterval: 180, spawnBase: 240,
     frame: 0, flashTimer: 0,
   };
@@ -262,7 +263,7 @@ function drawCenterText(lines, colors) {
 // --- Update Stage 1 ---
 function update1() {
   const g = gs; g.frame++;
-  g.tship.spd = Math.min(g.tship.spd + 0.003, TSHIP_DX * SPD_MULT);
+  g.tship.spd = Math.min(g.tship.spd + 0.003, TSHIP_DX * S1_SPD_MULT);
   g.tship.x += g.tship.dx * g.tship.spd;
   if (g.tship.x > W-18) g.tship.dx = -1;
   if (g.tship.x < 18)   g.tship.dx =  1;
@@ -275,7 +276,7 @@ function update1() {
   if (g.spawnTick >= g.spawnInterval) {
     g.spawnTick = 0;
     g.caps.push({ x: g.tship.x + (Math.random()-0.5)*16, y: g.tship.y+10,
-                  spd: g.baseSpeed + Math.random()*0.4*SPD_MULT });
+                  spd: g.baseSpeed + Math.random()*0.4*S1_SPD_MULT });
     if (g.spawnBase > 120) g.spawnBase -= 4;
     g.spawnInterval = 120 + Math.random() * (g.spawnBase - 120);
   }
@@ -286,7 +287,7 @@ function update1() {
     const ax = g.astro.x, ay = g.astro.y;
     if (c.y > ay-12 && c.y < ay+8 && Math.abs(c.x-ax) < 10) {
       g.caps.splice(i,1); g.score++;
-      g.baseSpeed += S1_SPD_ACC * SPD_MULT;
+      g.baseSpeed += S1_SPD_ACC * S1_SPD_MULT;
       g.flashTimer = 8;
       if (g.score >= 15) { state='WIN_ANIM'; winPhase=0; winTick=0; pipeY=g.tship.y+8; }
       continue;
