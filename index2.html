@@ -52,7 +52,8 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 // ──────────────────────────────────────────────────────────────────
 
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const SPD_MULT = IS_TOUCH ? 2.0 : 1.0;
+const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
+const S2_BAR_MULT = IS_TOUCH ? 1.0 : 1.0; // bar独自の乗数（スマホでもPCと同じ速度）
 
 let gs;
 let state = 'START';
@@ -84,7 +85,7 @@ function newGame2() {
     caps:  [],
     score: 0, miss: 0,
     barAngle: 0, barDir: 1,
-    barSpeed: S2_BAR_BASE * SPD_MULT,
+    barSpeed: S2_BAR_BASE * S2_BAR_MULT,
     frame: 0, flashTimer: 0,
   };
   winPhase = 0; winTick = 0; pipeY = 0;
@@ -309,7 +310,7 @@ function update2() {
     const tx = g.tship.x, ty = g.tship.y;
     if (c.y > ty-6 && c.y < ty+6 && Math.abs(c.x-tx) < 20) {
       g.caps.splice(i,1); g.score++;
-      g.barSpeed += S2_BAR_ACC * SPD_MULT;
+      g.barSpeed += S2_BAR_ACC * S2_BAR_MULT;
       g.flashTimer = 8;
       if (g.score >= 5) { state='WIN_ANIM'; winPhase=0; winTick=0; pipeY=g.tship.y+8; }
       continue;
