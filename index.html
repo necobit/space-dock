@@ -71,7 +71,8 @@ function newGame() {
     miss:  0,
     baseSpeed: 0.9 * SPD_MULT,
     spawnTick: 0,
-    spawnInterval: 100,
+    spawnInterval: 180,
+    spawnBase: 240,
     frame: 0,
     flashTimer: 0,
   };
@@ -254,7 +255,8 @@ function update() {
       y: g.tship.y + 10,
       spd: g.baseSpeed + Math.random() * 0.4
     });
-    if (g.spawnInterval > 45) g.spawnInterval -= 2;
+    if (g.spawnBase > 120) g.spawnBase -= 4;
+    g.spawnInterval = 120 + Math.random() * (g.spawnBase - 120);
   }
 
   // Capsule physics + collision
