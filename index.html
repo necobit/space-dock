@@ -347,6 +347,9 @@ function loop() {
       ['SPACE DOCK','','PRESS SPACE / TAP'],
       [12,0,6]
     );
+    ctx.fillStyle = P[5]; ctx.font = '5px monospace';
+    ctx.textAlign = 'right'; ctx.fillText('necobit', W-2, H-3);
+    ctx.textAlign = 'left';
   }
   else if (state === 'PLAY1') {
     update1();
