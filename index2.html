@@ -96,6 +96,8 @@ function newGame2() {
 const keys = {};
 document.addEventListener('keydown', e => {
   keys[e.key] = true;
+  if (e.key === '1' && state === 'SELECT') { newGame1(); return; }
+  if (e.key === '2' && state === 'SELECT') { newGame2(); return; }
   if (e.key === ' ' || e.key === 'Enter') { handleAction(); e.preventDefault(); }
 });
 document.addEventListener('keyup', e => { keys[e.key] = false; });
@@ -103,6 +105,12 @@ document.addEventListener('keyup', e => { keys[e.key] = false; });
 let touchX = null;
 C.addEventListener('touchstart', e => {
   touchX = e.touches[0].clientX;
+  if (state === 'SELECT') {
+    // tap upper half → stage 1, lower half → stage 2
+    const ty = e.touches[0].clientY - C.getBoundingClientRect().top;
+    if (ty < C.clientHeight / 2) newGame1(); else newGame2();
+    e.preventDefault(); return;
+  }
   if (state !== 'PLAY1') handleAction();
   e.preventDefault();
 }, { passive: false });
@@ -122,8 +130,9 @@ function handleAction() {
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
   if (state === 'WIN1')     { newGame2(); return; }
-  if (state === 'WIN2' || state === 'GAMEOVER') { state = 'START'; hint.textContent = 'PRESS SPACE / TAP'; return; }
-  if (state === 'START')    { newGame1(); return; }
+  if (state === 'WIN2' || state === 'GAMEOVER') { state = 'SELECT'; hint.textContent = '1: STAGE1  2: STAGE2'; return; }
+  if (state === 'START')    { state = 'SELECT'; hint.textContent = '1: STAGE1  2: STAGE2'; return; }
+  if (state === 'SELECT')   { newGame1(); return; }
 }
 
 function fireCapsule() {
@@ -338,8 +347,16 @@ function loop() {
     drawTopShip(W/2, 24);
     drawBottomShip(W/2, H-24);
     drawCenterText(
-      ['SPACE DOCK','','STAGE 1: CATCH 15','MISS 3 = OVER','','PRESS SPACE / TAP'],
-      [12,0,11,9,0,6]
+      ['SPACE DOCK','','PRESS SPACE / TAP'],
+      [12,0,6]
+    );
+  }
+  else if (state === 'SELECT') {
+    drawTopShip(W/2, 50);
+    drawBottomShip(W/2, H-50);
+    drawCenterText(
+      ['SELECT STAGE','','[ 1 ]  STAGE 1','CATCH 15 CAPSULES','','[ 2 ]  STAGE 2','FIRE 5 CAPSULES'],
+      [12,0,6,11,0,6,11]
     );
   }
   else if (state === 'PLAY1') {
