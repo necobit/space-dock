@@ -54,6 +54,7 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
 const S2_SPD_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2専用乗数
+const S2_CAP_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2カプセル追加乗数
 
 let gs;
 let state = 'START';
@@ -139,7 +140,7 @@ function handleAction() {
 function fireCapsule() {
   if (!gs || gs.caps.length > 0) return;
   const rad = gs.barAngle * Math.PI / 180;
-  const spd = S2_CAP_SPD * S2_SPD_MULT;
+  const spd = S2_CAP_SPD * S2_SPD_MULT * S2_CAP_MULT;
   gs.caps.push({
     x: gs.astro.x, y: gs.astro.y - 10,
     vx: Math.sin(rad) * spd, vy: -Math.cos(rad) * spd,
