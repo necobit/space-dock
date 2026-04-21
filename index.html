@@ -331,7 +331,7 @@ function updateWinAnim() {
     pipeY = Math.min(pipeY + 2, target);
     if (pipeY >= target) { winPhase = 2; winTick = 0; }
   } else if (winPhase === 2) {
-    if (winTick > 60) state = nextState;
+    if (winTick > 60) { g.tship.x = W/2; g.tship.y = H/2-60; state = nextState; }
   }
 }
 
