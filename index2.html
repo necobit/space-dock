@@ -44,7 +44,7 @@ const P = [
 
 // ── TUNING (base values for PC; mobile applies SPD_MULT) ──────────
 const TSHIP_DX    = 0.7;   // top ship horiz speed (px/frame)
-const S1_SPD_BASE = 0.9;   // stage1: capsule fall speed base
+const S1_SPD_BASE = 0.45;  // stage1: capsule fall speed base
 const S1_SPD_ACC  = 0.12;  // stage1: fall speed gain per catch
 const S2_BAR_BASE = 1.5;   // stage2: bar oscillation (deg/frame)
 const S2_BAR_ACC  = 0.5;   // stage2: bar speed gain per hit
@@ -54,7 +54,7 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
 const S2_SPD_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2専用乗数
-const S2_CAP_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2カプセル追加乗数
+const S2_CAP_MULT = 1.0; // Stage2カプセル追加乗数
 
 let gs;
 let state = 'START';
@@ -63,7 +63,7 @@ let winPhase = 0, winTick = 0, pipeY = 0;
 function newGame1() {
   gs = {
     stageNum: 1,
-    tship: { x: W/2, y: 18, dx: TSHIP_DX * SPD_MULT },
+    tship: { x: W/2, y: 18, dx: 1, spd: TSHIP_DX * SPD_MULT * 0.5 },
     bship: { x: W/2, y: H - 18 },
     astro: { x: W/2, y: H - 30 },
     caps:  [],
@@ -262,9 +262,10 @@ function drawCenterText(lines, colors) {
 // --- Update Stage 1 ---
 function update1() {
   const g = gs; g.frame++;
-  g.tship.x += g.tship.dx;
-  if (g.tship.x > W-18) g.tship.dx = -TSHIP_DX * SPD_MULT;
-  if (g.tship.x < 18)   g.tship.dx =  TSHIP_DX * SPD_MULT;
+  g.tship.spd = Math.min(g.tship.spd + 0.003, TSHIP_DX * SPD_MULT);
+  g.tship.x += g.tship.dx * g.tship.spd;
+  if (g.tship.x > W-18) g.tship.dx = -1;
+  if (g.tship.x < 18)   g.tship.dx =  1;
 
   const spd = 1.8;
   if (keys['ArrowLeft']  || keys['a'] || keys['A']) g.astro.x = clamp(g.astro.x - spd, 8, W-8);
