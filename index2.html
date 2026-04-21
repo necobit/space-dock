@@ -53,9 +53,11 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
-const S1_SPD_MULT = IS_TOUCH ? 2.0 : 0.5; // Stage1専用乗数（PC=0.5、スマホ=2.0）
-const S2_SPD_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2専用乗数
-const S2_CAP_MULT = 1.0; // Stage2カプセル追加乗数
+const S1_SPD_MULT   = IS_TOUCH ? 2.0 : 0.5;  // Stage1専用乗数（PC=0.5、スマホ=2.0）
+const S1_CAP_MULT   = IS_TOUCH ? 1.0 : 1.5;  // Stage1カプセル速度補正（PC=1.5倍）
+const S1_SPAWN_MULT = IS_TOUCH ? 1.0 : 2.0;  // Stage1スポーン間隔補正（PC=2倍）
+const S2_SPD_MULT   = IS_TOUCH ? 0.5 : 1.0;  // Stage2専用乗数
+const S2_CAP_MULT   = 1.0;                    // Stage2カプセル追加乗数
 
 let gs;
 let state = 'START';
@@ -70,7 +72,7 @@ function newGame1() {
     caps:  [],
     score: 0, miss: 0,
     baseSpeed: S1_SPD_BASE * S1_SPD_MULT,
-    spawnTick: 0, spawnInterval: 180, spawnBase: 240,
+    spawnTick: 0, spawnInterval: 180 * S1_SPAWN_MULT, spawnBase: 240 * S1_SPAWN_MULT,
     frame: 0, flashTimer: 0,
   };
   winPhase = 0; winTick = 0; pipeY = 0;
@@ -273,12 +275,13 @@ function update1() {
   if (keys['ArrowRight'] || keys['d'] || keys['D']) g.astro.x = clamp(g.astro.x + spd, 8, W-8);
 
   g.spawnTick++;
-  if (g.spawnTick >= g.spawnInterval) {
+  if (g.spawnTick >= g.spawnInterval && g.caps.length === 0) {
     g.spawnTick = 0;
     g.caps.push({ x: g.tship.x + (Math.random()-0.5)*16, y: g.tship.y+10,
-                  spd: g.baseSpeed + Math.random()*0.4*S1_SPD_MULT });
-    if (g.spawnBase > 120) g.spawnBase -= 4;
-    g.spawnInterval = 120 + Math.random() * (g.spawnBase - 120);
+                  spd: (g.baseSpeed + Math.random()*0.4*S1_SPD_MULT) * S1_CAP_MULT });
+    const minI = 120 * S1_SPAWN_MULT;
+    if (g.spawnBase > minI) g.spawnBase -= 4;
+    g.spawnInterval = minI + Math.random() * (g.spawnBase - minI);
   }
 
   if (g.flashTimer > 0) g.flashTimer--;
