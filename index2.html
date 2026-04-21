@@ -51,7 +51,7 @@ const P = [
 ];
 
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const SPD_MULT = IS_TOUCH ? 2.0 : 1.0;
+const SPD_MULT = IS_TOUCH ? 2.0 : 0.5;
 
 let gs;
 let state = 'START';
@@ -222,7 +222,7 @@ function drawHUD() {
   ctx.font = '6px monospace';
   ctx.fillText('HIT ' + gs.score + '/5', 2, 8);
   ctx.fillStyle = P[4];
-  ctx.fillText('MISS ' + gs.miss + '/3', W-34, 8);
+  ctx.fillText('MISS ' + gs.miss + '/10', W-38, 8);
   const bw = (gs.score / 5) * (W - 4);
   px(2, H-4, W-4, 2, 1);
   px(2, H-4, bw|0, 2, 8);
@@ -278,7 +278,7 @@ function update() {
     if (c.y < -10 || c.x < -10 || c.x > W + 10) {
       g.caps.splice(i, 1);
       g.miss++;
-      if (g.miss >= 3) state = 'GAMEOVER';
+      if (g.miss >= 10) state = 'GAMEOVER';
     }
   }
 }
@@ -301,7 +301,7 @@ function loop() {
     drawTopShip(W/2, 24);
     drawBottomShip(W/2, H - 24);
     drawCenterText(
-      ['STAGE 2', '', 'AIM THE BAR', 'FIRE TO TOP SHIP', '5 HITS TO CLEAR', '3 MISS = OVER', '', 'SPACE / TAP'],
+      ['STAGE 2', '', 'AIM THE BAR', 'FIRE TO TOP SHIP', '5 HITS TO CLEAR', '10 MISS = OVER', '', 'SPACE / TAP'],
       [15, 0, 11, 11, 8, 4, 0, 6]
     );
   }
