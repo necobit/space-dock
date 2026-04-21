@@ -205,11 +205,11 @@ function drawPipe(x1, y1, x2, y2) {
 function drawHUD() {
   ctx.fillStyle = P[12];
   ctx.font = '6px monospace';
-  ctx.fillText('CATCH ' + gs.score + '/10', 2, 8);
+  ctx.fillText('CATCH ' + gs.score + '/20', 2, 8);
   ctx.fillStyle = P[4];
   ctx.fillText('MISS ' + gs.miss + '/3',  W-34, 8);
   // progress bar
-  const bw = (gs.score / 10) * (W - 4);
+  const bw = (gs.score / 20) * (W - 4);
   px(2, H-4, W-4, 2, 1);
   px(2, H-4, bw|0, 2, 8);
 }
@@ -267,7 +267,7 @@ function update() {
       g.score++;
       g.baseSpeed += 0.12;
       g.flashTimer = 8;
-      if (g.score >= 10) {
+      if (g.score >= 20) {
         state = 'WIN_ANIM';
         winPhase = 0;
         winTick  = 0;
@@ -318,7 +318,7 @@ function loop() {
     drawTopShip(W/2, 24);
     drawBottomShip(W/2, H - 24);
     drawCenterText(
-      ['SPACE DOCK', '','CATCH 10 CAPSULES','MISS 3 = GAME OVER','','PRESS SPACE / TAP'],
+      ['SPACE DOCK', '','CATCH 20 CAPSULES','MISS 3 = GAME OVER','','PRESS SPACE / TAP'],
       [12, 0, 11, 9, 0, 6]
     );
   }
@@ -360,7 +360,7 @@ function loop() {
   }
   else if (state === 'GAMEOVER') {
     drawCenterText(
-      ['GAME OVER', '', 'CAUGHT: ' + gs.score + '/10', '', 'PRESS SPACE / TAP'],
+      ['GAME OVER', '', 'CAUGHT: ' + gs.score + '/20', '', 'PRESS SPACE / TAP'],
       [4, 0, 11, 0, 6]
     );
   }
