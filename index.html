@@ -54,6 +54,9 @@ const P = [
 ];
 
 // --- State ---
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const SPD_MULT = IS_TOUCH ? 1.5 : 1.0;
+
 let gs; // game state object
 let state = 'START';
 let winPhase = 0, winTick = 0, pipeY = 0;
@@ -66,7 +69,7 @@ function newGame() {
     caps:  [],
     score: 0,
     miss:  0,
-    baseSpeed: 0.9,
+    baseSpeed: 0.9 * SPD_MULT,
     spawnTick: 0,
     spawnInterval: 100,
     frame: 0,
@@ -265,7 +268,7 @@ function update() {
     if (c.y > ay - 12 && c.y < ay + 8 && Math.abs(c.x - ax) < 10) {
       g.caps.splice(i, 1);
       g.score++;
-      g.baseSpeed += 0.12;
+      g.baseSpeed += 0.12 * SPD_MULT;
       g.flashTimer = 8;
       if (g.score >= 15) {
         state = 'WIN_ANIM';
