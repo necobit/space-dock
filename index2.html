@@ -325,7 +325,7 @@ function updateWinAnim() {
   g.tship.y += (H/2-60 - g.tship.y) * 0.04;
   const nextState = g.stageNum === 1 ? 'WIN1' : 'WIN2';
   if (winPhase === 0) {
-    if (winTick > 80) { winPhase = 1; winTick = 0; }
+    if (winTick > 80) { winPhase = 1; winTick = 0; pipeY = gs.tship.y + 8; }
   } else if (winPhase === 1) {
     const target = g.bship.y - 12;
     pipeY = Math.min(pipeY + 2, target);
