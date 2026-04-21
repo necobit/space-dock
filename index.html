@@ -55,7 +55,7 @@ const P = [
 
 // --- State ---
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const SPD_MULT = IS_TOUCH ? 1.5 : 1.0;
+const SPD_MULT = IS_TOUCH ? 2.0 : 1.0;
 
 let gs; // game state object
 let state = 'START';
