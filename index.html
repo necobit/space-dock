@@ -16,36 +16,25 @@ body {
   overflow:hidden;
   font-family:monospace;
 }
-canvas {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  cursor:none;
-}
-#hint {
-  color:#555;
-  font-size:11px;
-  margin-top:6px;
-  letter-spacing:1px;
-}
+canvas { image-rendering:pixelated; image-rendering:crisp-edges; cursor:none; }
+#hint { color:#555; font-size:11px; margin-top:6px; letter-spacing:1px; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hint">← → / TAP to move</div>
+<div id="hint">PRESS SPACE / TAP</div>
 <script>
 const C = document.getElementById('c');
 const ctx = C.getContext('2d');
+const hint = document.getElementById('hint');
 ctx.imageSmoothingEnabled = false;
 
-// Logical size
 const W = 160, H = 240;
-// Scale to fit screen
 const SCALE = Math.floor(Math.min(window.innerWidth / W, (window.innerHeight - 30) / H));
-C.width  = W * SCALE;
+C.width = W * SCALE;
 C.height = H * SCALE;
 ctx.scale(SCALE, SCALE);
 
-// 4-bit palette (16 colors)
 const P = [
   '#000000','#1a1a2e','#16213e','#0f3460',
   '#e94560','#ff6b35','#f5c518','#4a90d9',
@@ -53,320 +42,368 @@ const P = [
   '#50e3c2','#bd10e0','#ffaaff','#88ff88'
 ];
 
-// --- State ---
-const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const SPD_MULT = IS_TOUCH ? 2.0 : 1.0;
+// ── TUNING (base values for PC; mobile applies SPD_MULT) ──────────
+const TSHIP_DX    = 0.7;   // top ship horiz speed (px/frame)
+const S1_SPD_BASE = 0.45;  // stage1: capsule fall speed base
+const S1_SPD_ACC  = 0.12;  // stage1: fall speed gain per catch
+const S2_BAR_BASE = 1.5;   // stage2: bar oscillation (deg/frame)
+const S2_BAR_ACC  = 0.5;   // stage2: bar speed gain per hit
+const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
+// ──────────────────────────────────────────────────────────────────
 
-let gs; // game state object
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
+const S1_SPD_MULT   = IS_TOUCH ? 2.0 : 0.5;  // Stage1専用乗数（PC=0.5、スマホ=2.0）
+const S1_CAP_MULT   = IS_TOUCH ? 1.0 : 1.5;  // Stage1カプセル速度補正（PC=1.5倍）
+const S1_SPAWN_MULT = IS_TOUCH ? 1.0 : 2.0;  // Stage1スポーン間隔補正（PC=2倍）
+const S2_SPD_MULT   = IS_TOUCH ? 0.5 : 0.25; // Stage2専用乗数
+const S2_CAP_MULT   = 1.0;                    // Stage2カプセル追加乗数
+
+let gs;
 let state = 'START';
 let winPhase = 0, winTick = 0, pipeY = 0;
 
-function newGame() {
+function newGame1() {
   gs = {
-    tship: { x: W/2, y: 18, dx: 0.7 },
+    stageNum: 1,
+    tship: { x: W/2, y: 18, dx: 1, spd: TSHIP_DX * S1_SPD_MULT * 0.5 },
     bship: { x: W/2, y: H - 18 },
     astro: { x: W/2, y: H - 30 },
     caps:  [],
-    score: 0,
-    miss:  0,
-    baseSpeed: 0.9 * SPD_MULT,
-    spawnTick: 0,
-    spawnInterval: 180,
-    spawnBase: 240,
-    frame: 0,
-    flashTimer: 0,
+    score: 0, miss: 0,
+    baseSpeed: S1_SPD_BASE * S1_SPD_MULT,
+    spawnTick: 0, spawnInterval: 180 * S1_SPAWN_MULT, spawnBase: 240 * S1_SPAWN_MULT,
+    frame: 0, flashTimer: 0,
   };
   winPhase = 0; winTick = 0; pipeY = 0;
-  state = 'PLAY';
+  state = 'PLAY1';
+  hint.textContent = '← → / TAP to move';
+}
+
+function newGame2() {
+  gs = {
+    stageNum: 2,
+    tship: { x: W/2, y: 18, dx: TSHIP_DX * S2_SPD_MULT },
+    bship: { x: W/2, y: H - 18 },
+    astro: { x: W/2, y: H - 30 },
+    caps:  [],
+    score: 0, miss: 0,
+    barAngle: 0, barDir: 1,
+    barSpeed: S2_BAR_BASE * S2_SPD_MULT,
+    frame: 0, flashTimer: 0,
+  };
+  winPhase = 0; winTick = 0; pipeY = 0;
+  state = 'PLAY2';
+  hint.textContent = 'SPACE / TAP to fire';
 }
 
 // --- Input ---
 const keys = {};
 document.addEventListener('keydown', e => {
   keys[e.key] = true;
-  if ((e.key === ' ' || e.key === 'Enter') && state !== 'PLAY' && state !== 'WIN_ANIM') newGame();
+  if (e.key === ' ' || e.key === 'Enter') { handleAction(); e.preventDefault(); }
 });
 document.addEventListener('keyup', e => { keys[e.key] = false; });
 
-// Touch
 let touchX = null;
 C.addEventListener('touchstart', e => {
   touchX = e.touches[0].clientX;
-  if (state !== 'PLAY' && state !== 'WIN_ANIM') newGame();
+  if (state !== 'PLAY1') handleAction();
   e.preventDefault();
-}, { passive:false });
+}, { passive: false });
 C.addEventListener('touchmove', e => {
-  if (state === 'PLAY' && touchX !== null) {
+  if (state === 'PLAY1' && touchX !== null) {
     const dx = (e.touches[0].clientX - touchX) / SCALE;
-    gs.astro.x = clamp(gs.astro.x + dx * 0.8, 8, W-8);
+    gs.astro.x = clamp(gs.astro.x + dx * 0.8, 8, W - 8);
     touchX = e.touches[0].clientX;
   }
   e.preventDefault();
-}, { passive:false });
-C.addEventListener('touchend', () => { touchX = null; }, {passive:false});
-C.addEventListener('click', () => {
-  if (state !== 'PLAY' && state !== 'WIN_ANIM') newGame();
-});
+}, { passive: false });
+C.addEventListener('touchend', () => { touchX = null; }, { passive: false });
+C.addEventListener('click', () => { handleAction(); });
 
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-// --- Drawing primitives ---
-function px(x, y, w, h, ci) {
-  ctx.fillStyle = P[ci];
-  ctx.fillRect(x|0, y|0, w, h);
+function handleAction() {
+  if (state === 'WIN_ANIM' || state === 'WIN1') return;
+  if (state === 'PLAY2')    { fireCapsule(); return; }
+  if (state === 'PLAY1')    return;
+  if (state === 'WIN2' || state === 'GAMEOVER') { state = 'START'; hint.textContent = 'PRESS SPACE / TAP'; return; }
+  if (state === 'START')    { newGame1(); return; }
 }
 
+function fireCapsule() {
+  if (!gs || gs.caps.length > 0) return;
+  const rad = gs.barAngle * Math.PI / 180;
+  const spd = S2_CAP_SPD * S2_SPD_MULT * S2_CAP_MULT;
+  gs.caps.push({
+    x: gs.astro.x, y: gs.astro.y - 10,
+    vx: Math.sin(rad) * spd, vy: -Math.cos(rad) * spd,
+  });
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function px(x, y, w, h, ci) { ctx.fillStyle = P[ci]; ctx.fillRect(x|0, y|0, w, h); }
+
+// --- Drawing ---
 function drawStars() {
   for (let i = 0; i < 40; i++) {
-    const sx = (i*37+11) % W;
-    const sy = (i*73+19) % H;
-    const c  = (i%3===0) ? 11 : 9;
-    px(sx, sy, 1, 1, c);
+    px((i*37+11)%W, (i*73+19)%H, 1, 1, (i%3===0)?11:9);
   }
 }
 
 function drawTopShip(x, y) {
-  // ブリップA — Hail Mary needle, 3-blade horizontal spindle
-  // Top blade
   px(x-12, y-3, 24, 1, 6);
-  // Main center body
   px(x-18, y-1, 36, 3, 6);
-  // Center orange stripe
   px(x-15, y,   30, 1, 5);
-  // Bottom blade
   px(x-12, y+3, 24, 1, 6);
-  // Gray pointed tips
-  px(x-20, y,   2, 1, 9);
-  px(x+18, y,   2, 1, 9);
-  // Center spine connector
-  px(x-2, y-2, 4, 5, 9);
-  // Highlight
-  px(x-8, y-1, 4, 1, 10);
-  // Engine glow (rear)
-  px(x-21, y,   2, 1, 4);
+  px(x-20, y,   2,  1, 9);
+  px(x+18, y,   2,  1, 9);
+  px(x-2,  y-2, 4,  5, 9);
+  px(x-8,  y-1, 4,  1, 10);
+  px(x-21, y,   2,  1, 4);
 }
 
 function drawBottomShip(x, y) {
-  // thruster nozzle
-  px(x-4, y+7, 8, 3, 5);
-  // body
-  px(x-12, y-3, 24, 8, 11);
-  // deck
-  px(x-6, y-7, 12, 4, 10);
-  // cockpit
-  px(x-3, y-11, 6, 4, 11);
-  // airlock
-  px(x+8, y-1, 3, 4, 10);
-  // detail
-  px(x-10, y-1, 20, 1, 9);
+  px(x-4,  y+7,  8,  3, 5);
+  px(x-12, y-3,  24, 8, 11);
+  px(x-6,  y-7,  12, 4, 10);
+  px(x-3,  y-11, 6,  4, 11);
+  px(x+8,  y-1,  3,  4, 10);
+  px(x-10, y-1,  20, 1, 9);
 }
 
 function drawAstronaut(x, y, flash) {
   const c = flash ? 6 : 4;
-  // tether
-  ctx.strokeStyle = P[9];
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = P[9]; ctx.lineWidth = 1;
   ctx.beginPath();
-  const bx = gs.bship.x + 10, by = gs.bship.y - 2;
-  ctx.moveTo(bx|0, by|0);
+  ctx.moveTo((gs.bship.x+10)|0, (gs.bship.y-2)|0);
   ctx.lineTo(x|0, (y-6)|0);
   ctx.stroke();
-  // head
   px(x-3, y-10, 6, 5, c);
-  px(x-2, y-9, 4, 3, 12); // visor
-  // body
-  px(x-4, y-5, 8, 7, c);
-  // arms
-  px(x-8, y-4, 4, 3, 10);
-  px(x+4,  y-4, 4, 3, 10);
-  // legs
-  px(x-3, y+2, 3, 4, c);
-  px(x+1,  y+2, 3, 4, c);
+  px(x-2, y-9,  4, 3, 12);
+  px(x-4, y-5,  8, 7, c);
+  px(x-8, y-4,  4, 3, 10);
+  px(x+4, y-4,  4, 3, 10);
+  px(x-3, y+2,  3, 4, c);
+  px(x+1, y+2,  3, 4, c);
 }
 
 function drawCapsule(x, y) {
-  px(x-2, y-6, 4, 1, 10); // cap
-  px(x-3, y-5, 6, 8, 9);  // body
-  px(x-1, y-4, 2, 6, 11); // window shine
-  px(x-2, y+3, 4, 1, 10); // bottom cap
+  px(x-2, y-6, 4, 1, 10);
+  px(x-3, y-5, 6, 8, 9);
+  px(x-1, y-4, 2, 6, 11);
+  px(x-2, y+3, 4, 1, 10);
 }
 
 function drawPipe(x1, y1, x2, y2) {
-  ctx.strokeStyle = P[9];
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(x1|0, y1|0);
-  ctx.lineTo(x2|0, y2|0);
-  ctx.stroke();
-  ctx.strokeStyle = P[10];
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo((x1-1)|0, y1|0);
-  ctx.lineTo((x2-1)|0, y2|0);
-  ctx.stroke();
+  ctx.strokeStyle = P[9]; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x1|0, y1|0); ctx.lineTo(x2|0, y2|0); ctx.stroke();
+  ctx.strokeStyle = P[10]; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo((x1-1)|0, y1|0); ctx.lineTo((x2-1)|0, y2|0); ctx.stroke();
 }
 
-function drawHUD() {
-  ctx.fillStyle = P[12];
-  ctx.font = '6px monospace';
+function drawAimGuides(x, y) {
+  const base = y - 12;
+  ctx.lineWidth = 1;
+  for (const a of [-45, 0, 45]) {
+    const rad = a * Math.PI / 180;
+    ctx.strokeStyle = (a === 0) ? P[3] : P[2];
+    ctx.beginPath();
+    ctx.moveTo(x|0, base|0);
+    ctx.lineTo((x + Math.sin(rad)*20)|0, (base - Math.cos(rad)*20)|0);
+    ctx.stroke();
+  }
+}
+
+function drawBar(x, y, angle) {
+  const rad = angle * Math.PI / 180;
+  const ex = x + Math.sin(rad) * 22, ey = y - 12 - Math.cos(rad) * 22;
+  ctx.strokeStyle = P[6]; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x|0, (y-12)|0); ctx.lineTo(ex|0, ey|0); ctx.stroke();
+  px(ex-1|0, ey-1|0, 3, 3, 6);
+}
+
+function drawHUD1() {
+  ctx.fillStyle = P[12]; ctx.font = '6px monospace';
   ctx.fillText('CATCH ' + gs.score + '/15', 2, 8);
   ctx.fillStyle = P[4];
-  ctx.fillText('MISS ' + gs.miss + '/3',  W-34, 8);
-  // progress bar
-  const bw = (gs.score / 15) * (W - 4);
+  ctx.fillText('MISS ' + gs.miss + '/3', W-34, 8);
   px(2, H-4, W-4, 2, 1);
-  px(2, H-4, bw|0, 2, 8);
+  px(2, H-4, ((gs.score/15)*(W-4))|0, 2, 8);
+}
+
+function drawHUD2() {
+  ctx.fillStyle = P[12]; ctx.font = '6px monospace';
+  ctx.fillText('HIT ' + gs.score + '/5', 2, 8);
+  ctx.fillStyle = P[4];
+  ctx.fillText('MISS ' + gs.miss + '/10', W-40, 8);
+  px(2, H-4, W-4, 2, 1);
+  px(2, H-4, ((gs.score/5)*(W-4))|0, 2, 8);
 }
 
 function drawCenterText(lines, colors) {
-  const lineH = 10;
-  const total = lines.length * lineH;
+  const lineH = 10, total = lines.length * lineH;
   let sy = H/2 - total/2;
   lines.forEach((txt, i) => {
-    ctx.fillStyle = P[colors[i] !== undefined ? colors[i] : 11];
-    ctx.font = (i === 0 ? '8px' : '6px') + ' monospace';
+    ctx.fillStyle = P[colors[i] ?? 11];
+    ctx.font = (i===0 ? '8px' : '6px') + ' monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(txt, W/2, sy + i * lineH);
+    ctx.fillText(txt, W/2, sy + i*lineH);
     ctx.textAlign = 'left';
   });
 }
 
-// --- Update ---
-function update() {
-  const g = gs;
-  g.frame++;
+// --- Update Stage 1 ---
+function update1() {
+  const g = gs; g.frame++;
+  g.tship.spd = Math.min(g.tship.spd + 0.003, TSHIP_DX * S1_SPD_MULT);
+  g.tship.x += g.tship.dx * g.tship.spd;
+  if (g.tship.x > W-18) g.tship.dx = -1;
+  if (g.tship.x < 18)   g.tship.dx =  1;
 
-  // Top ship movement
-  g.tship.x += g.tship.dx;
-  if (g.tship.x > W - 18) g.tship.dx = -0.7;
-  if (g.tship.x < 18)     g.tship.dx =  0.7;
-
-  // Astronaut movement
   const spd = 1.8;
   if (keys['ArrowLeft']  || keys['a'] || keys['A']) g.astro.x = clamp(g.astro.x - spd, 8, W-8);
   if (keys['ArrowRight'] || keys['d'] || keys['D']) g.astro.x = clamp(g.astro.x + spd, 8, W-8);
 
-  // Spawn capsule
   g.spawnTick++;
-  if (g.spawnTick >= g.spawnInterval) {
+  if (g.spawnTick >= g.spawnInterval && g.caps.length === 0) {
     g.spawnTick = 0;
-    g.caps.push({
-      x: g.tship.x + (Math.random() - 0.5) * 16,
-      y: g.tship.y + 10,
-      spd: g.baseSpeed + Math.random() * 0.4
-    });
-    if (g.spawnBase > 120) g.spawnBase -= 4;
-    g.spawnInterval = 120 + Math.random() * (g.spawnBase - 120);
+    g.caps.push({ x: g.tship.x + (Math.random()-0.5)*16, y: g.tship.y+10,
+                  spd: (g.baseSpeed + Math.random()*0.4*S1_SPD_MULT) * S1_CAP_MULT });
+    const minI = 120 * S1_SPAWN_MULT;
+    if (g.spawnBase > minI) g.spawnBase -= 4;
+    g.spawnInterval = minI + Math.random() * (g.spawnBase - minI);
   }
 
-  // Capsule physics + collision
   if (g.flashTimer > 0) g.flashTimer--;
-  for (let i = g.caps.length - 1; i >= 0; i--) {
-    const c = g.caps[i];
-    c.y += c.spd;
-
-    // Catch check (astronaut bounding box)
+  for (let i = g.caps.length-1; i >= 0; i--) {
+    const c = g.caps[i]; c.y += c.spd;
     const ax = g.astro.x, ay = g.astro.y;
-    if (c.y > ay - 12 && c.y < ay + 8 && Math.abs(c.x - ax) < 10) {
-      g.caps.splice(i, 1);
-      g.score++;
-      g.baseSpeed += 0.12 * SPD_MULT;
+    if (c.y > ay-12 && c.y < ay+8 && Math.abs(c.x-ax) < 10) {
+      g.caps.splice(i,1); g.score++;
+      g.baseSpeed += S1_SPD_ACC * S1_SPD_MULT;
       g.flashTimer = 8;
-      if (g.score >= 15) {
-        state = 'WIN_ANIM';
-        winPhase = 0;
-        winTick  = 0;
-        pipeY    = g.tship.y + 8;
-      }
+      if (g.score >= 15) { state='WIN1'; winTick=0; }
       continue;
     }
+    if (c.y > H) { g.caps.splice(i,1); g.miss++; if (g.miss >= 3) state='GAMEOVER'; }
+  }
+}
 
-    // Miss check
-    if (c.y > H) {
-      g.caps.splice(i, 1);
-      g.miss++;
-      if (g.miss >= 3) state = 'GAMEOVER';
+// --- Update Stage 2 ---
+function update2() {
+  const g = gs; g.frame++;
+  g.tship.x += g.tship.dx;
+  if (g.tship.x > W-18) g.tship.dx = -TSHIP_DX * S2_SPD_MULT;
+  if (g.tship.x < 18)   g.tship.dx =  TSHIP_DX * S2_SPD_MULT;
+
+  g.barAngle += g.barSpeed * g.barDir;
+  if (g.barAngle >= 45)  { g.barAngle = 45;  g.barDir = -1; }
+  if (g.barAngle <= -45) { g.barAngle = -45; g.barDir =  1; }
+
+  if (g.flashTimer > 0) g.flashTimer--;
+  for (let i = g.caps.length-1; i >= 0; i--) {
+    const c = g.caps[i]; c.x += c.vx; c.y += c.vy;
+    const tx = g.tship.x, ty = g.tship.y;
+    if (c.y > ty-6 && c.y < ty+6 && Math.abs(c.x-tx) < 20) {
+      g.caps.splice(i,1); g.score++;
+      g.barSpeed += S2_BAR_ACC * S2_SPD_MULT;
+      g.flashTimer = 8;
+      if (g.score >= 5) { state='WIN_ANIM'; winPhase=0; winTick=0; pipeY=g.tship.y+8; }
+      continue;
+    }
+    if (c.y < -10 || c.x < -10 || c.x > W+10) {
+      g.caps.splice(i,1); g.miss++; if (g.miss >= 10) state='GAMEOVER';
     }
   }
 }
 
+// --- Win Animation ---
 function updateWinAnim() {
   winTick++;
   const g = gs;
-
-  // Phase 0: move top ship to center-x
+  g.tship.x += (W/2 - g.tship.x) * 0.07;
+  g.tship.y += (H/2-60 - g.tship.y) * 0.04;
+  const nextState = g.stageNum === 1 ? 'WIN1' : 'WIN2';
   if (winPhase === 0) {
-    g.tship.x += (W/2 - g.tship.x) * 0.07;
-    g.tship.y += (H/2 - 60 - g.tship.y) * 0.04;
-    if (winTick > 80) { winPhase = 1; winTick = 0; }
-  }
-  // Phase 1: extend pipe
-  else if (winPhase === 1) {
+    if (winTick > 80) { winPhase = 1; winTick = 0; pipeY = gs.tship.y + 8; }
+  } else if (winPhase === 1) {
     const target = g.bship.y - 12;
     pipeY = Math.min(pipeY + 2, target);
     if (pipeY >= target) { winPhase = 2; winTick = 0; }
-  }
-  // Phase 2: hold then win
-  else if (winPhase === 2) {
-    if (winTick > 60) state = 'WIN';
+  } else if (winPhase === 2) {
+    if (winTick > 60) state = nextState;
   }
 }
 
-// --- Main loop ---
+// --- Main Loop ---
 function loop() {
-  // Clear
-  ctx.fillStyle = P[0];
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = P[0]; ctx.fillRect(0, 0, W, H);
   drawStars();
 
   if (state === 'START') {
     drawTopShip(W/2, 24);
-    drawBottomShip(W/2, H - 24);
+    drawBottomShip(W/2, H-24);
     drawCenterText(
-      ['SPACE DOCK', '','CATCH 15 CAPSULES','MISS 3 = GAME OVER','','PRESS SPACE / TAP'],
-      [12, 0, 11, 9, 0, 6]
+      ['SPACE DOCK','','PRESS SPACE / TAP'],
+      [12,0,6]
     );
   }
-  else if (state === 'PLAY') {
-    update();
+  else if (state === 'PLAY1') {
+    update1();
     const g = gs;
     drawTopShip(g.tship.x, g.tship.y);
     for (const c of g.caps) drawCapsule(c.x, c.y);
     drawBottomShip(g.bship.x, g.bship.y);
     drawAstronaut(g.astro.x, g.astro.y, g.flashTimer > 0);
-    drawHUD();
+    drawHUD1();
+  }
+  else if (state === 'PLAY2') {
+    update2();
+    const g = gs;
+    drawTopShip(g.tship.x, g.tship.y);
+    for (const c of g.caps) drawCapsule(c.x, c.y);
+    drawBottomShip(g.bship.x, g.bship.y);
+    drawAimGuides(g.astro.x, g.astro.y);
+    drawBar(g.astro.x, g.astro.y, g.barAngle);
+    drawAstronaut(g.astro.x, g.astro.y, g.flashTimer > 0);
+    drawHUD2();
   }
   else if (state === 'WIN_ANIM') {
     updateWinAnim();
     const g = gs;
     drawBottomShip(g.bship.x, g.bship.y);
     drawTopShip(g.tship.x, g.tship.y);
-    if (winPhase >= 1) {
-      drawPipe(g.tship.x, g.tship.y + 8, g.tship.x, pipeY);
-    }
-    // Flash "DOCKING..."
+    if (winPhase >= 1) drawPipe(g.tship.x, g.tship.y+8, g.tship.x, pipeY);
     if ((winTick >> 2) % 2 === 0) {
-      ctx.fillStyle = P[12];
-      ctx.font = '8px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('DOCKING...', W/2, H/2 + 20);
-      ctx.textAlign = 'left';
+      ctx.fillStyle = P[12]; ctx.font = '8px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('DOCKING...', W/2, H/2+20); ctx.textAlign = 'left';
     }
   }
-  else if (state === 'WIN') {
+  else if (state === 'WIN1') {
+    winTick++;
+    drawTopShip(W/2, 24);
+    drawBottomShip(W/2, H-24);
+    drawCenterText(
+      ['STAGE 1','COMPLETE!','','STAGE 2...'],
+      [15,12,0,6]
+    );
+    if (winTick > 120) newGame2();
+  }
+  else if (state === 'WIN2') {
     const g = gs;
     drawBottomShip(g.bship.x, g.bship.y);
-    drawTopShip(W/2, H/2 - 60);
-    drawPipe(W/2, H/2 - 52, W/2, g.bship.y - 12);
+    drawTopShip(W/2, H/2-60);
+    drawPipe(W/2, H/2-52, W/2, g.bship.y-12);
     drawCenterText(
-      ['DOCKING', 'COMPLETE!', '', 'PRESS SPACE / TAP'],
-      [15, 12, 0, 6]
+      ['MISSION','COMPLETE!','','DOCKING SUCCESS','','PRESS SPACE / TAP'],
+      [15,12,0,8,0,6]
     );
   }
   else if (state === 'GAMEOVER') {
+    const sn = gs ? gs.stageNum : 1;
     drawCenterText(
-      ['GAME OVER', '', 'CAUGHT: ' + gs.score + '/15', '', 'PRESS SPACE / TAP'],
-      [4, 0, 11, 0, 6]
+      ['GAME OVER','','STAGE ' + sn,'SCORE: ' + (gs?gs.score:0),'','PRESS SPACE / TAP'],
+      [4,0,11,11,0,6]
     );
   }
 
