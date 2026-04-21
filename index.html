@@ -122,19 +122,24 @@ function drawStars() {
 }
 
 function drawTopShip(x, y) {
-  // ブリップA — classic pixel fighter
-  // Wings
-  px(x-10, y+1, 7, 2, 3);
-  px(x+3,  y+1, 7, 2, 3);
-  // Body
-  px(x-3, y-3, 6, 7, 7);
-  // Cockpit
-  px(x-2, y-6, 4, 3, 12);
-  // Wing tips
-  px(x-11, y+2, 2, 1, 7);
-  px(x+9,  y+2, 2, 1, 7);
-  // Engine glow
-  px(x-2, y+4, 4, 2, 4);
+  // ブリップA — Hail Mary needle, 3-blade horizontal spindle
+  // Top blade
+  px(x-12, y-3, 24, 1, 6);
+  // Main center body
+  px(x-18, y-1, 36, 3, 6);
+  // Center orange stripe
+  px(x-15, y,   30, 1, 5);
+  // Bottom blade
+  px(x-12, y+3, 24, 1, 6);
+  // Gray pointed tips
+  px(x-20, y,   2, 1, 9);
+  px(x+18, y,   2, 1, 9);
+  // Center spine connector
+  px(x-2, y-2, 4, 5, 9);
+  // Highlight
+  px(x-8, y-1, 4, 1, 10);
+  // Engine glow (rear)
+  px(x-21, y,   2, 1, 4);
 }
 
 function drawBottomShip(x, y) {
