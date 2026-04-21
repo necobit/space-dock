@@ -53,7 +53,7 @@ const S2_CAP_SPD  = 2.5;   // stage2: capsule launch speed (px/frame)
 
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const SPD_MULT    = IS_TOUCH ? 2.0 : 1.0;
-const S2_SPD_MULT = IS_TOUCH ? 1.0 : 1.0; // Stage2専用乗数（スマホ=SPD_MULTの半分）
+const S2_SPD_MULT = IS_TOUCH ? 0.5 : 1.0; // Stage2専用乗数
 
 let gs;
 let state = 'START';
