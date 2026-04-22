@@ -662,6 +662,7 @@ function loop() {
       px(0, H/2, W, 1, 9);
       drawAstronautS3(W/2, 68, 'idle');
       drawRockyS3(W/2, 178, 'idle');
+      for (const d of GESTURES3) drawArrow3(d, true);
       const n = s3CountTick <= 60 ? '3' : s3CountTick <= 120 ? '2' : s3CountTick <= 180 ? '1' : 'GO!';
       ctx.textAlign = 'center'; ctx.font = '36px monospace';
       ctx.fillStyle = s3CountTick > 180 ? P[8] : P[6];
