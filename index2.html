@@ -457,19 +457,19 @@ function drawRockyS3(cx, cy, rockyState) {
     px(cx-22, cy-10, 10, 2, 9);
     px(cx+12, cy-10, 10, 2, 9);
   } else if (rockyState === 'point_left') {
-    // Left arm extended, right normal
-    px(cx-24, cy-4,  12, 2, 9);
+    // Left arm raised high (same height as cheer_up), right normal
+    px(cx-22, cy-10, 10, 2, 9);
     px(cx+12, cy-3,  10, 2, 9);
   } else if (rockyState === 'point_right') {
-    // Right arm extended, left normal
+    // Right arm raised high, left normal
     px(cx-22, cy-3,  10, 2, 9);
-    px(cx+12, cy-4,  12, 2, 9);
+    px(cx+12, cy-10, 10, 2, 9);
   } else if (rockyState === 'thumbs_down') {
-    // Left arm normal, right arm horizontal with finger pointing down
+    // Left arm normal, right arm stretched far out then finger pointing down
     px(cx-22, cy-3,  10, 2, 9);
-    px(cx+12, cy-3,  10, 2, 9);
-    px(cx+20, cy-3,   2, 8, 9);  // arm bends downward
-    px(cx+19, cy+5,   4, 2, 5);  // orange finger tip (down)
+    px(cx+12, cy-3,  18, 2, 9);  // long arm stretching right
+    px(cx+28, cy-3,   2, 10, 9); // bends sharply down
+    px(cx+26, cy+7,   6, 2, 5);  // orange finger tip (down)
   } else if (rockyState === 'sad') {
     // Both arms drooping
     px(cx-20, cy+5,  10, 2, 9);
@@ -514,7 +514,7 @@ function nextRound3() {
   g.gesture    = GESTURES3[Math.floor(Math.random() * 4)];
   g.timer      = Math.max(54, Math.round(180 - g.score * (180-54) / 19));
   g.phase      = 'show';
-  g.rockyState = (g.gesture === 'down') ? 'thumbs_down' : 'idle';
+  g.rockyState = 'idle';
 }
 
 function update3() {
