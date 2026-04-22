@@ -425,11 +425,11 @@ function drawAstronautS3(cx, cy, gesture) {
     px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
     px(rx, sy-12, 4, 12, 4); px(rx, sy-16, 4, 4, 9);
   } else if (gesture === 'right') {
-    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
-    px(rx, sy-12, 4, 12, 4); px(rx, sy-16, 4, 4, 9);
+    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);      // left arm down
+    px(rx, sy+4, 14, 4, 4); px(rx+14, sy+2, 5, 6, 9);   // right arm horizontal
   } else if (gesture === 'left') {
-    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
-    px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
+    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);       // right arm down
+    px(lx-14, sy+4, 14, 4, 4); px(lx-19, sy+2, 5, 6, 9); // left arm horizontal
   } else if (gesture === 'idle') {
     px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
@@ -556,7 +556,7 @@ function handleInput3(dir) {
 }
 
 function drawArrow3(dir, highlight) {
-  const c = highlight ? 6 : 1;
+  const c = highlight ? 6 : 3;
   if (dir === 'up') {
     px(79, 123, 2, 2, c); px(77, 125, 6, 2, c); px(75, 127, 10, 2, c); px(79, 129, 2, 10, c);
   } else if (dir === 'down') {
@@ -570,23 +570,25 @@ function drawArrow3(dir, highlight) {
 
 function drawTunnel3() {
   ctx.fillStyle = P[1]; ctx.fillRect(0, 0, W, H);
-  const cx = W/2, cy = H/2;
-  // Radial perspective lines
-  ctx.lineWidth = 1;
-  for (let a = 0; a < 8; a++) {
-    const rad = (a / 8) * Math.PI * 2;
-    ctx.strokeStyle = P[2];
-    ctx.beginPath();
-    ctx.moveTo((cx + Math.cos(rad)*10)|0, (cy + Math.sin(rad)*8)|0);
-    ctx.lineTo((cx + Math.cos(rad)*78)|0, (cy + Math.sin(rad)*65)|0);
-    ctx.stroke();
+  // Concentric rectangular rings converging to vanishing point (80,120)
+  // Each step: dx=12, dy=18 to maintain circular proportions on 160x240
+  const rings = [
+    [0,  0,   160, 240, 2],
+    [12, 18,  136, 204, 3],
+    [24, 36,  112, 168, 2],
+    [36, 54,   88, 132, 3],
+    [48, 72,   64,  96, 2],
+    [58, 87,   44,  66, 7],
+    [68,102,   24,  36,12],
+  ];
+  for (const [x, y, w, h, ci] of rings) {
+    if (w < 4 || h < 4) continue;
+    px(x,     y,     w, 2, ci);   // top
+    px(x,     y+h-2, w, 2, ci);   // bottom
+    px(x,     y,     2, h, ci);   // left
+    px(x+w-2, y,     2, h, ci);   // right
   }
-  // Concentric pipe rings (outermost → innermost)
-  const rings = [[78,65,P[3],3],[58,49,P[2],2],[40,34,P[3],2],[24,20,P[2],2],[12,10,P[7],2],[5,4,P[12],1]];
-  for (const [rx,ry,col,lw] of rings) {
-    ctx.strokeStyle = col; ctx.lineWidth = lw;
-    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2); ctx.stroke();
-  }
+  px(78, 117, 4, 6, 12);  // vanishing point
 }
 
 // --- Main Loop ---
