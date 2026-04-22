@@ -63,6 +63,7 @@ let gs;
 let state = 'START';
 let winPhase = 0, winTick = 0, pipeY = 0;
 let selectedStage = 1;
+let s3TapDir = null, s3TapTimer = 0;
 
 function launchStage(n) {
   if (n === 1) newGame1();
@@ -428,9 +429,13 @@ function drawAstronautS3(cx, cy, gesture) {
   } else if (gesture === 'left') {
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
     px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
-  } else { // 'down' - thumbs up
-    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9); px(lx+1, sy+8, 2, 5, 11);
-    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9); px(rx+1, sy+8, 2, 5, 11);
+  } else { // 'down' - thumbs up (arms out horizontal, thumb pointing up)
+    px(lx-14, sy+2, 14, 4, 4);  // left arm extends left
+    px(lx-19, sy,   5, 6, 9);   // left fist
+    px(lx-18, sy-5, 2, 8, 11);  // left thumb up
+    px(rx,    sy+2, 14, 4, 4);  // right arm extends right
+    px(rx+14, sy,   5, 6, 9);   // right fist
+    px(rx+15, sy-5, 2, 8, 11);  // right thumb up
   }
 }
 
@@ -470,7 +475,7 @@ function drawHUD3() {
   ctx.fillStyle = P[4];
   ctx.fillText('MISS ' + g.miss + '/3', W-34, 8);
   if (g.phase === 'show') {
-    const maxT = Math.max(18, Math.round(60 - g.score * (60-18) / 19));
+    const maxT = Math.max(54, Math.round(180 - g.score * (180-54) / 19));
     px(2, 116, W-4, 2, 1);
     px(2, 116, ((g.timer / maxT) * (W-4))|0, 2, g.timer < 20 ? 4 : 6);
   }
@@ -495,13 +500,14 @@ function newGame3() {
 function nextRound3() {
   const g = gs;
   g.gesture    = GESTURES3[Math.floor(Math.random() * 4)];
-  g.timer      = Math.max(18, Math.round(60 - g.score * (60-18) / 19));
+  g.timer      = Math.max(54, Math.round(180 - g.score * (180-54) / 19));
   g.phase      = 'show';
   g.rockyState = (g.gesture === 'down') ? 'thumbs_down' : 'idle';
 }
 
 function update3() {
   const g = gs; g.frame++;
+  if (s3TapTimer > 0) s3TapTimer--;
   if (g.phase === 'show') {
     if (--g.timer <= 0) {
       g.miss++; g.resultOk = false; g.rockyState = 'sad';
@@ -518,6 +524,7 @@ function update3() {
 
 function handleInput3(dir) {
   if (!gs || gs.stageNum !== 3 || gs.phase !== 'show') return;
+  s3TapDir = dir; s3TapTimer = 20;
   const g = gs;
   if (dir === g.gesture) {
     g.score++; g.resultOk = true; g.rockyState = 'happy';
@@ -525,6 +532,19 @@ function handleInput3(dir) {
     g.miss++;  g.resultOk = false; g.rockyState = 'sad';
   }
   g.phase = 'result'; g.resultTimer = 35;
+}
+
+function drawArrow3(dir, highlight) {
+  const c = highlight ? 6 : 1;
+  if (dir === 'up') {
+    px(79, 123, 2, 2, c); px(77, 125, 6, 2, c); px(75, 127, 10, 2, c); px(79, 129, 2, 10, c);
+  } else if (dir === 'down') {
+    px(79, 220, 2, 10, c); px(75, 230, 10, 2, c); px(77, 232, 6, 2, c); px(79, 234, 2, 2, c);
+  } else if (dir === 'left') {
+    px(4,  177, 2, 2, c); px(6,  175, 2, 6, c); px(8,  173, 2, 10, c); px(10, 177, 12, 2, c);
+  } else {
+    px(138, 177, 12, 2, c); px(150, 173, 2, 10, c); px(152, 175, 2, 6, c); px(154, 177, 2, 2, c);
+  }
 }
 
 // --- Main Loop ---
@@ -615,6 +635,7 @@ function loop() {
     px(0, H/2, W, 1, 9);                      // dividing line
     drawAstronautS3(W/2, 68, g.gesture);
     drawRockyS3(W/2, 178, g.rockyState);
+    for (const d of GESTURES3) drawArrow3(d, s3TapDir === d && s3TapTimer > 0);
     drawHUD3();
   }
   else if (state === 'WIN3') {
