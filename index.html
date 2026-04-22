@@ -435,11 +435,11 @@ function drawAstronautS3(cx, cy, gesture) {
   } else if (gesture === 'idle') {
     px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
-  } else { // 'down' - right-hand thumbs up only (left arm normal)
-    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);  // left arm down
-    px(rx,    sy+2, 14, 4, 4);   // right arm horizontal
-    px(rx+14, sy,   5,  6, 9);   // right fist
-    px(rx+15, sy-5, 2,  8, 11);  // right thumb up
+  } else { // 'down' - right arm diagonal-DOWN, thumb pointing up
+    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);    // left arm down
+    px(rx,   sy+2, 8, 4, 4); px(rx+7, sy+6, 7, 4, 4); // right arm diagonal downward
+    px(rx+14, sy+4, 5, 6, 9);                           // fist
+    px(rx+15, sy-2, 2, 8, 11);                          // thumb pointing UP
   }
 }
 
