@@ -568,6 +568,27 @@ function drawArrow3(dir, highlight) {
   }
 }
 
+function drawTunnel3() {
+  ctx.fillStyle = P[1]; ctx.fillRect(0, 0, W, H);
+  const cx = W/2, cy = H/2;
+  // Radial perspective lines
+  ctx.lineWidth = 1;
+  for (let a = 0; a < 8; a++) {
+    const rad = (a / 8) * Math.PI * 2;
+    ctx.strokeStyle = P[2];
+    ctx.beginPath();
+    ctx.moveTo((cx + Math.cos(rad)*10)|0, (cy + Math.sin(rad)*8)|0);
+    ctx.lineTo((cx + Math.cos(rad)*78)|0, (cy + Math.sin(rad)*65)|0);
+    ctx.stroke();
+  }
+  // Concentric pipe rings (outermost → innermost)
+  const rings = [[78,65,P[3],3],[58,49,P[2],2],[40,34,P[3],2],[24,20,P[2],2],[12,10,P[7],2],[5,4,P[12],1]];
+  for (const [rx,ry,col,lw] of rings) {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2); ctx.stroke();
+  }
+}
+
 // --- Main Loop ---
 function loop() {
   ctx.fillStyle = P[0]; ctx.fillRect(0, 0, W, H);
@@ -659,6 +680,7 @@ function loop() {
       state = 'PLAY3';
       hint.textContent = IS_TOUCH ? 'TAP direction on Rocky' : '← → ↑ ↓';
     } else {
+      drawTunnel3();
       px(0, H/2, W, 1, 9);
       drawAstronautS3(W/2, 68, 'idle');
       drawRockyS3(W/2, 178, 'idle');
@@ -673,6 +695,7 @@ function loop() {
   else if (state === 'PLAY3') {
     update3();
     const g = gs;
+    drawTunnel3();
     px(0, H/2, W, 1, 9);                      // dividing line
     drawAstronautS3(W/2, 68, g.gesture);
     drawRockyS3(W/2, 178, g.rockyState);
@@ -681,6 +704,7 @@ function loop() {
   }
   else if (state === 'WIN3') {
     winTick++;
+    drawTunnel3();
     // Characters side by side
     ctx.textAlign = 'center';
     ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 3', W/2, 18);
