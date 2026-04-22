@@ -425,11 +425,13 @@ function drawAstronautS3(cx, cy, gesture) {
     px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
     px(rx, sy-12, 4, 12, 4); px(rx, sy-16, 4, 4, 9);
   } else if (gesture === 'right') {
-    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);      // left arm down
-    px(rx, sy+4, 14, 4, 4); px(rx+14, sy+2, 5, 6, 9);   // right arm horizontal
+    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);        // left arm down
+    px(rx,   sy+2, 8, 4, 4); px(rx+7, sy-2, 7, 4, 4);    // right arm diagonal up-right
+    px(rx+14, sy-5, 5, 6, 9);                              // right glove
   } else if (gesture === 'left') {
-    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);       // right arm down
-    px(lx-14, sy+4, 14, 4, 4); px(lx-19, sy+2, 5, 6, 9); // left arm horizontal
+    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);         // right arm down
+    px(cx-13, sy+2, 8, 4, 4); px(cx-20, sy-2, 7, 4, 4);  // left arm diagonal up-left (connected at cx-5)
+    px(cx-25, sy-5, 5, 6, 9);                              // left glove
   } else if (gesture === 'idle') {
     px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
