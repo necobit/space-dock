@@ -429,13 +429,11 @@ function drawAstronautS3(cx, cy, gesture) {
   } else if (gesture === 'left') {
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
     px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
-  } else { // 'down' - thumbs up (arms out horizontal, thumb pointing up)
-    px(lx-14, sy+2, 14, 4, 4);  // left arm extends left
-    px(lx-19, sy,   5, 6, 9);   // left fist
-    px(lx-18, sy-5, 2, 8, 11);  // left thumb up
-    px(rx,    sy+2, 14, 4, 4);  // right arm extends right
-    px(rx+14, sy,   5, 6, 9);   // right fist
-    px(rx+15, sy-5, 2, 8, 11);  // right thumb up
+  } else { // 'down' - right-hand thumbs up only (left arm normal)
+    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);  // left arm down
+    px(rx,    sy+2, 14, 4, 4);   // right arm horizontal
+    px(rx+14, sy,   5,  6, 9);   // right fist
+    px(rx+15, sy-5, 2,  8, 11);  // right thumb up
   }
 }
 
@@ -449,22 +447,25 @@ function drawRockyS3(cx, cy, rockyState) {
   // Eyes
   px(cx-5, cy-5, 4, 4, 4); px(cx+1, cy-5, 4, 4, 4);
   px(cx-4, cy-4, 2, 3, 0); px(cx+2, cy-4, 2, 3, 0);
-  // Legs
+  // 5 limbs: 2 left, 3 right
   if (rockyState === 'happy') {
-    px(cx-22, cy-8, 10, 2, 9); px(cx-22, cy-2, 9, 2, 9); px(cx-20, cy+5, 8, 2, 9);
-    px(cx+12, cy-8, 10, 2, 9); px(cx+13, cy-2, 9, 2, 9); px(cx+12, cy+5, 8, 2, 9);
+    // Both upper arms raised (human-like cheer)
+    px(cx-22, cy-10, 10, 2, 9); px(cx-19, cy-3,  8, 2, 9);
+    px(cx+12, cy-10, 10, 2, 9); px(cx+13, cy-3,  9, 2, 9); px(cx+11, cy+7, 8, 2, 9);
   } else if (rockyState === 'sad') {
-    px(cx-22, cy+3, 10, 2, 9); px(cx-21, cy+7, 9, 2, 9); px(cx-18, cy+11, 8, 2, 9);
-    px(cx+12, cy+3, 10, 2, 9); px(cx+12, cy+7, 9, 2, 9); px(cx+10, cy+11, 8, 2, 9);
+    // All limbs drooping (human-like deflation)
+    px(cx-22, cy+5, 10, 2, 9); px(cx-20, cy+10,  8, 2, 9);
+    px(cx+12, cy+5, 10, 2, 9); px(cx+11, cy+9,   9, 2, 9); px(cx+9, cy+13, 8, 2, 9);
   } else if (rockyState === 'thumbs_down') {
-    px(cx-22, cy-4, 10, 2, 9); px(cx-21, cy+2, 9, 2, 9); px(cx-19, cy+7, 8, 2, 9);
-    px(cx+12, cy-4, 10, 2, 9); px(cx+13, cy+2, 9, 2, 9); px(cx+11, cy+7, 8, 2, 9);
-    px(cx-2,  cy+9,  4, 10, 9);    // thumbs-down arm
-    px(cx-4,  cy+18, 8,  4, 9);    // fist
-    px(cx-1,  cy+22, 2,  4, 5);    // thumb tip (orange = pointing down)
+    // Normal limbs + center thumbs-down arm
+    px(cx-22, cy-3, 10, 2, 9); px(cx-20, cy+6,  8, 2, 9);
+    px(cx+12, cy-3, 10, 2, 9); px(cx+11, cy+7,  8, 2, 9);
+    px(cx-2,  cy+9,  4, 10, 9);  // arm pointing down
+    px(cx-4,  cy+18, 8,  4, 9);  // fist
+    px(cx-1,  cy+22, 2,  4, 5);  // thumb tip pointing down
   } else { // idle
-    px(cx-22, cy-4, 10, 2, 9); px(cx-21, cy+2, 9, 2, 9); px(cx-19, cy+7, 8, 2, 9);
-    px(cx+12, cy-4, 10, 2, 9); px(cx+13, cy+2, 9, 2, 9); px(cx+11, cy+7, 8, 2, 9);
+    px(cx-22, cy-3, 10, 2, 9); px(cx-20, cy+6,  8, 2, 9);
+    px(cx+12, cy-3, 10, 2, 9); px(cx+13, cy+2,  9, 2, 9); px(cx+11, cy+7, 8, 2, 9);
   }
 }
 
@@ -559,6 +560,9 @@ function loop() {
       ['SPACE DOCK','','PRESS SPACE / TAP'],
       [12,0,6]
     );
+    ctx.fillStyle = P[5]; ctx.font = '5px monospace';
+    ctx.textAlign = 'right'; ctx.fillText('necobit', W-2, H-3);
+    ctx.textAlign = 'left';
   }
   else if (state === 'SELECT') {
     drawTopShip(W/2, 24);
