@@ -64,6 +64,7 @@ let state = 'START';
 let winPhase = 0, winTick = 0, pipeY = 0;
 let selectedStage = 1;
 let s3TapDir = null, s3TapTimer = 0;
+let s3CountTick = 0;
 
 function launchStage(n) {
   if (n === 1) newGame1();
@@ -175,7 +176,7 @@ C.addEventListener('click', e => {
 });
 
 function handleAction() {
-  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3') return;
+  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3') return;
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
   if (state === 'WIN3' || state === 'GAMEOVER') {
@@ -429,6 +430,9 @@ function drawAstronautS3(cx, cy, gesture) {
   } else if (gesture === 'left') {
     px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
     px(lx, sy-12, 4, 12, 4); px(lx, sy-16, 4, 4, 9);
+  } else if (gesture === 'idle') {
+    px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
+    px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
   } else { // 'down' - right-hand thumbs up only (left arm normal)
     px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);  // left arm down
     px(rx,    sy+2, 14, 4, 4);   // right arm horizontal
@@ -505,8 +509,9 @@ function newGame3() {
          resultTimer: 0, resultOk: false, rockyState: 'idle', frame: 0 };
   winTick = 0; winPhase = 0; pipeY = 0;
   nextRound3();
-  state = 'PLAY3';
-  hint.textContent = IS_TOUCH ? 'TAP direction on Rocky' : '← → ↑ ↓';
+  s3CountTick = 0;
+  state = 'COUNTDOWN3';
+  hint.textContent = '';
 }
 
 function nextRound3() {
@@ -647,6 +652,22 @@ function loop() {
       [15,12,0,6]
     );
     if (winTick > 120) newGame3();
+  }
+  else if (state === 'COUNTDOWN3') {
+    s3CountTick++;
+    if (s3CountTick > 210) {
+      state = 'PLAY3';
+      hint.textContent = IS_TOUCH ? 'TAP direction on Rocky' : '← → ↑ ↓';
+    } else {
+      px(0, H/2, W, 1, 9);
+      drawAstronautS3(W/2, 68, 'idle');
+      drawRockyS3(W/2, 178, 'idle');
+      const n = s3CountTick <= 60 ? '3' : s3CountTick <= 120 ? '2' : s3CountTick <= 180 ? '1' : 'GO!';
+      ctx.textAlign = 'center'; ctx.font = '36px monospace';
+      ctx.fillStyle = s3CountTick > 180 ? P[8] : P[6];
+      ctx.fillText(n, W/2, H/2 + 12);
+      ctx.textAlign = 'left';
+    }
   }
   else if (state === 'PLAY3') {
     update3();
