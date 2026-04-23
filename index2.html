@@ -684,21 +684,27 @@ function loop() {
   }
   else if (state === 'GUIDE3') {
     s3GuideTick++;
-    if (s3GuideTick > 480) {
+    if (s3GuideTick > 540) {
       s3CountTick = 0;
       state = 'COUNTDOWN3';
     } else {
-      const guideIdx = Math.min(Math.floor((s3GuideTick - 1) / 120), 3);
-      const guideDir = GUIDE_ORDER[guideIdx];
-      const rockyGuide = guideDir === 'up' ? 'cheer_up' : guideDir === 'right' ? 'point_right' : guideDir === 'left' ? 'point_left' : 'thumbs_down';
       drawTunnel3();
       px(0, H/2, W, 1, 9);
-      drawAstronautS3(W/2, 68, guideDir);
-      drawRockyS3(W/2, 178, rockyGuide);
-      for (const d of GESTURES3) drawArrow3(d, d === guideDir);
       ctx.textAlign = 'center'; ctx.font = '6px monospace';
       ctx.fillStyle = P[6]; ctx.fillText('HOW TO PLAY', W/2, 14);
       ctx.textAlign = 'left';
+      if (s3GuideTick <= 60) {
+        drawAstronautS3(W/2, 68, 'idle');
+        drawRockyS3(W/2, 178, 'idle');
+        for (const d of GESTURES3) drawArrow3(d, false);
+      } else {
+        const guideIdx = Math.min(Math.floor((s3GuideTick - 61) / 120), 3);
+        const guideDir = GUIDE_ORDER[guideIdx];
+        const rockyGuide = guideDir === 'up' ? 'cheer_up' : guideDir === 'right' ? 'point_right' : guideDir === 'left' ? 'point_left' : 'thumbs_down';
+        drawAstronautS3(W/2, 68, guideDir);
+        drawRockyS3(W/2, 178, rockyGuide);
+        for (const d of GESTURES3) drawArrow3(d, d === guideDir);
+      }
     }
   }
   else if (state === 'COUNTDOWN3') {
