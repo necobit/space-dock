@@ -65,6 +65,8 @@ let winPhase = 0, winTick = 0, pipeY = 0;
 let selectedStage = 1;
 let s3TapDir = null, s3TapTimer = 0;
 let s3CountTick = 0;
+let s3GuideTick = 0;
+const GUIDE_ORDER = ['up','right','left','down'];
 
 function launchStage(n) {
   if (n === 1) newGame1();
@@ -176,7 +178,7 @@ C.addEventListener('click', e => {
 });
 
 function handleAction() {
-  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3') return;
+  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3') return;
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
   if (state === 'WIN3' || state === 'GAMEOVER') {
@@ -450,9 +452,8 @@ function drawRockyS3(cx, cy, rockyState) {
   px(cx-13, cy-2,  26,  4, 9);
   // Texture
   px(cx-4, cy-2, 4, 4, 1); px(cx+3, cy+2, 3, 3, 1); px(cx-7, cy+2, 3, 3, 1);
-  // Eyes
-  px(cx-5, cy-5, 4, 4, 4); px(cx+1, cy-5, 4, 4, 4);
-  px(cx-4, cy-4, 2, 3, 0); px(cx+2, cy-4, 2, 3, 0);
+  // Single eye mark (emerald green)
+  px(cx-2, cy-5, 4, 4, 12);
   // Lower 3 legs (static)
   px(cx-18, cy+7,  8, 2, 9);
   px(cx+13, cy+3,  9, 2, 9);
@@ -512,7 +513,8 @@ function newGame3() {
   winTick = 0; winPhase = 0; pipeY = 0;
   nextRound3();
   s3CountTick = 0;
-  state = 'COUNTDOWN3';
+  s3GuideTick = 0;
+  state = 'GUIDE3';
   hint.textContent = '';
 }
 
@@ -536,8 +538,10 @@ function update3() {
     if (--g.resultTimer <= 0) {
       if (g.miss >= 3)   { state = 'GAMEOVER'; return; }
       if (g.score >= 20) { state = 'WIN3'; winTick = 0; return; }
-      nextRound3();
+      g.phase = 'neutral'; g.neutralTimer = 60; g.gesture = null; g.rockyState = 'idle';
     }
+  } else if (g.phase === 'neutral') {
+    if (--g.neutralTimer <= 0) nextRound3();
   }
 }
 
@@ -558,7 +562,7 @@ function handleInput3(dir) {
 }
 
 function drawArrow3(dir, highlight) {
-  const c = highlight ? 6 : 3;
+  const c = highlight ? 6 : 7;
   if (dir === 'up') {
     px(79, 123, 2, 2, c); px(77, 125, 6, 2, c); px(75, 127, 10, 2, c); px(79, 129, 2, 10, c);
   } else if (dir === 'down') {
@@ -678,6 +682,31 @@ function loop() {
     );
     if (winTick > 120) newGame3();
   }
+  else if (state === 'GUIDE3') {
+    s3GuideTick++;
+    if (s3GuideTick > 540) {
+      s3CountTick = 0;
+      state = 'COUNTDOWN3';
+    } else {
+      drawTunnel3();
+      px(0, H/2, W, 1, 9);
+      ctx.textAlign = 'center'; ctx.font = '6px monospace';
+      ctx.fillStyle = P[6]; ctx.fillText('HOW TO PLAY', W/2, 14);
+      ctx.textAlign = 'left';
+      if (s3GuideTick <= 60) {
+        drawAstronautS3(W/2, 68, 'idle');
+        drawRockyS3(W/2, 178, 'idle');
+        for (const d of GESTURES3) drawArrow3(d, false);
+      } else {
+        const guideIdx = Math.min(Math.floor((s3GuideTick - 61) / 120), 3);
+        const guideDir = GUIDE_ORDER[guideIdx];
+        const rockyGuide = guideDir === 'up' ? 'cheer_up' : guideDir === 'right' ? 'point_right' : guideDir === 'left' ? 'point_left' : 'thumbs_down';
+        drawAstronautS3(W/2, 68, guideDir);
+        drawRockyS3(W/2, 178, rockyGuide);
+        for (const d of GESTURES3) drawArrow3(d, d === guideDir);
+      }
+    }
+  }
   else if (state === 'COUNTDOWN3') {
     s3CountTick++;
     if (s3CountTick > 210) {
@@ -701,7 +730,7 @@ function loop() {
     const g = gs;
     drawTunnel3();
     px(0, H/2, W, 1, 9);                      // dividing line
-    drawAstronautS3(W/2, 68, g.gesture);
+    drawAstronautS3(W/2, 68, g.gesture || 'idle');
     drawRockyS3(W/2, 178, g.rockyState);
     for (const d of GESTURES3) drawArrow3(d, s3TapDir === d && s3TapTimer > 0);
     drawHUD3();
