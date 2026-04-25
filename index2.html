@@ -623,10 +623,10 @@ function drawGraceS4(cx, cy, helmetOff) {
     px(cx-2, hy+2, 4, 4, 12);
     px(cx-2, hy+3, 2, 1, 11);
   } else {
-    px(cx-4, hy,   8, 8, 14);   // face (pinkish)
-    px(cx-3, hy+2, 2, 2, 5);    // left eye
-    px(cx+1, hy+2, 2, 2, 5);    // right eye
-    px(cx-2, hy+5, 4, 1, 4);    // smile
+    px(cx-4, hy,   8, 8, 14);
+    px(cx-3, hy+2, 2, 2, 5);
+    px(cx+1, hy+2, 2, 2, 5);
+    px(cx-2, hy+5, 4, 1, 4);
   }
   px(cx-2, hy+8,  4, 2, 9);
   px(cx-5, hy+10, 10, 14, 4);
@@ -636,54 +636,75 @@ function drawGraceS4(cx, cy, helmetOff) {
   px(cx+1, hy+24, 4, 12, 4);
   px(cx-5, hy+36, 4,  3, 9);
   px(cx+1, hy+36, 4,  3, 9);
-  const sy = hy + 10;
-  const lx = cx - 9, rx = cx + 5;
+  const sy = hy + 10, lx = cx - 9, rx = cx + 5;
   px(lx, sy, 4, 12, 4); px(lx, sy+12, 4, 4, 9);
   px(rx, sy, 4, 12, 4); px(rx, sy+12, 4, 4, 9);
 }
 
+function drawCapsule4(cx, cy, openAmt) {
+  // openAmt: 0=closed, 1=fully open. Halves split apart.
+  const gap = Math.round(openAmt * 20);
+  // Top half
+  px(cx-8, cy-gap-14, 16, 2, 10);
+  px(cx-10, cy-gap-12, 20, 14, 9);
+  px(cx-6,  cy-gap-11, 12, 10, 3);
+  px(cx-4,  cy-gap-9,   8,  6, 7);
+  // Bottom half
+  px(cx-10, cy+gap,    20, 14, 9);
+  px(cx-6,  cy+gap+1,  12, 10, 3);
+  px(cx-8,  cy+gap+14, 16,  2, 10);
+}
+
 function drawMaru4(cx, cy) {
-  const c = 8;  // green
-  px(cx-6, cy-11, 12, 2, c); px(cx-6, cy+9,  12, 2, c);
-  px(cx-11, cy-6,  2, 12, c); px(cx+9, cy-6,  2, 12, c);
-  px(cx-9, cy-9, 2, 2, c); px(cx+7, cy-9, 2, 2, c);
-  px(cx-9, cy+7, 2, 2, c); px(cx+7, cy+7, 2, 2, c);
-  ctx.fillStyle = P[c]; ctx.font = '8px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('○', cx, cy+3); ctx.textAlign = 'left';
+  const c = 8;
+  px(cx-8, cy-14, 16, 2, c); px(cx-8, cy+12,  16, 2, c);
+  px(cx-14, cy-8,  2, 16, c); px(cx+12, cy-8,  2, 16, c);
+  px(cx-12, cy-12, 4, 4, c); px(cx+8, cy-12, 4, 4, c);
+  px(cx-12, cy+8,  4, 4, c); px(cx+8, cy+8,  4, 4, c);
 }
 
 function drawBatsu4(cx, cy) {
-  const c = 4;  // red
-  for (let i = -6; i <= 6; i += 2) {
+  const c = 4;
+  for (let i = -8; i <= 8; i += 2) {
     px(cx+i-1, cy+i-1, 2, 2, c);
     px(cx-i-1, cy+i-1, 2, 2, c);
   }
-  ctx.fillStyle = P[c]; ctx.font = '8px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('×', cx, cy+3); ctx.textAlign = 'left';
 }
 
 function newGame4() {
   gs = { stageNum: 4, score: 0, miss: 0,
-         compound: null, timer: 0, phase: 'show',
+         phase: 'travel', capsuleX: W+10,
+         capOpenTimer: 0, compound: null, timer: 0,
          resultTimer: 0, frame: 0 };
   winTick = 0; s4FlashTimer = 0;
-  nextRound4();
+  gs.compound = pickCompound4();
   state = 'PLAY4';
   hint.textContent = IS_TOUCH ? '左=○  右=×' : 'Z=○  X=×';
 }
 
+function pickCompound4() {
+  const nonO2 = COMPOUNDS4.filter(c => c !== 'O2');
+  return Math.random() < 0.25 ? 'O2' : nonO2[Math.floor(Math.random() * nonO2.length)];
+}
+
 function nextRound4() {
   const g = gs;
-  const nonO2 = COMPOUNDS4.filter(c => c !== 'O2');
-  g.compound = Math.random() < 0.25 ? 'O2' : nonO2[Math.floor(Math.random() * nonO2.length)];
-  g.timer = 180;
-  g.phase = 'show';
+  g.compound = pickCompound4();
+  g.phase = 'travel';
+  g.capsuleX = W + 10;
+  g.capOpenTimer = 0;
 }
 
 function update4() {
   const g = gs; g.frame++;
   if (s4FlashTimer > 0) s4FlashTimer--;
-  if (g.phase === 'show') {
+  if (g.phase === 'travel') {
+    g.capsuleX -= 1.5;
+    if (g.capsuleX <= 107) { g.capsuleX = 107; g.phase = 'open'; g.capOpenTimer = 0; }
+  } else if (g.phase === 'open') {
+    g.capOpenTimer++;
+    if (g.capOpenTimer >= 25) { g.phase = 'show'; g.timer = 180; }
+  } else if (g.phase === 'show') {
     if (--g.timer <= 0) nextRound4();
   } else if (g.phase === 'result') {
     if (--g.resultTimer <= 0) {
@@ -696,12 +717,8 @@ function update4() {
 function handleCircle4() {
   if (!gs || gs.stageNum !== 4 || gs.phase !== 'show') return;
   const g = gs;
-  if (g.compound === 'O2') {
-    state = 'WIN4'; winTick = 0;
-  } else {
-    g.miss++; s4FlashTimer = 50;
-    g.phase = 'result'; g.resultTimer = 50;
-  }
+  if (g.compound === 'O2') { state = 'WIN4'; winTick = 0; }
+  else { g.miss++; s4FlashTimer = 50; g.phase = 'result'; g.resultTimer = 50; }
 }
 
 function handleCross4() {
@@ -871,36 +888,42 @@ function loop() {
   else if (state === 'PLAY4') {
     update4();
     const g = gs;
-    // Left panel (darker)
+    // Left panel (Rocky)
     px(0, 0, 53, H, 1);
-    // Wall
     px(51, 0, 3, H, 3); px(52, 0, 1, H, 7);
-    // Compound label
-    ctx.textAlign = 'center'; ctx.font = '5px monospace';
-    ctx.fillStyle = P[9]; ctx.fillText('COMPOUND', 26, 22);
-    ctx.fillStyle = P[11]; ctx.font = '10px monospace';
-    ctx.fillText(g.compound || '', 26, 40);
-    ctx.textAlign = 'left';
-    // Rocky
     drawRockyS3(26, 148, 'idle');
-    // Grace
-    drawGraceS4(107, 120, false);
-    // Buttons
-    drawMaru4(82, 195);
-    drawBatsu4(133, 195);
-    // Divider between buttons (visual)
-    px(107, 175, 1, 32, 3);
-    // Timer bar (right panel only)
-    px(55, 228, 104, 3, 2);
-    px(55, 228, Math.round((g.timer / 180) * 104), 3, g.timer < 60 ? 4 : 6);
+    ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('ROCKY', 26, 22); ctx.textAlign = 'left';
+    // Grace (right side, bottom)
+    drawGraceS4(140, 185, false);
+    // Capsule animation
+    const capY = 108;
+    if (g.phase === 'travel') {
+      drawCapsule4(g.capsuleX, capY, 0);
+    } else if (g.phase === 'open') {
+      drawCapsule4(107, capY, g.capOpenTimer / 25);
+    } else if (g.phase === 'show' || g.phase === 'result') {
+      drawCapsule4(107, capY, 1);
+      ctx.fillStyle = P[11]; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(g.compound, 107, capY + 5);
+      ctx.textAlign = 'left';
+    }
+    // ○× buttons (bottom of right panel)
+    drawMaru4(76, 210);
+    drawBatsu4(136, 210);
+    px(107, 192, 1, 30, 3);
+    // Timer bar
+    if (g.phase === 'show') {
+      px(55, 232, 104, 3, 2);
+      px(55, 232, Math.round((g.timer / 180) * 104), 3, g.timer < 60 ? 4 : 6);
+    }
     // HUD
     ctx.fillStyle = P[4]; ctx.font = '6px monospace';
     ctx.textAlign = 'right'; ctx.fillText('MISS ' + g.miss + '/3', W-2, 8);
     ctx.textAlign = 'left';
-    // Miss flash
+    // Miss flash overlay
     if (s4FlashTimer > 0) {
-      ctx.fillStyle = 'rgba(233,69,96,0.35)';
-      ctx.fillRect(0|0, 0|0, W, H);
+      ctx.fillStyle = 'rgba(233,69,96,0.35)'; ctx.fillRect(0, 0, W, H);
     }
   }
   else if (state === 'WIN4') {
@@ -908,12 +931,14 @@ function loop() {
     px(0, 0, 53, H, 1);
     px(51, 0, 3, H, 3); px(52, 0, 1, H, 7);
     drawRockyS3(26, 148, 'cheer_up');
-    drawGraceS4(107, 120, true);
-    ctx.textAlign = 'center';
-    ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 4', 107, 50);
-    ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', 107, 62);
-    ctx.fillStyle = P[8]; ctx.font = '6px monospace'; ctx.fillText('BREATHABLE!', 107, 76);
-    ctx.fillStyle = P[4]; ctx.font = '10px monospace'; ctx.fillText('♥', 70, 104);
+    drawGraceS4(107, 160, true);
+    drawCapsule4(107, 100, 1);
+    ctx.fillStyle = P[8]; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('O2', 107, 105);
+    ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 4', 107, 52);
+    ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', 107, 64);
+    ctx.fillStyle = P[14]; ctx.font = '6px monospace'; ctx.fillText('BREATHABLE!', 107, 76);
+    ctx.fillStyle = P[4]; ctx.font = '10px monospace'; ctx.fillText('♥', 68, 124);
     ctx.textAlign = 'left';
     if (winTick > 180) {
       ctx.fillStyle = P[6]; ctx.font = '6px monospace'; ctx.textAlign = 'center';
