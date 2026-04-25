@@ -703,7 +703,7 @@ function update4() {
     if (g.capsuleX <= 107) { g.capsuleX = 107; g.phase = 'open'; g.capOpenTimer = 0; }
   } else if (g.phase === 'open') {
     g.capOpenTimer++;
-    if (g.capOpenTimer >= 25) { g.phase = 'show'; g.timer = 180; }
+    if (g.capOpenTimer >= 25) { g.phase = 'show'; g.timer = 120; }
   } else if (g.phase === 'show') {
     if (--g.timer <= 0) nextRound4();
   } else if (g.phase === 'result') {
@@ -915,7 +915,7 @@ function loop() {
     // Timer bar
     if (g.phase === 'show') {
       px(55, 232, 104, 3, 2);
-      px(55, 232, Math.round((g.timer / 180) * 104), 3, g.timer < 60 ? 4 : 6);
+      px(55, 232, Math.round((g.timer / 120) * 104), 3, g.timer < 60 ? 4 : 6);
     }
     // HUD
     ctx.fillStyle = P[4]; ctx.font = '6px monospace';
