@@ -736,6 +736,7 @@ function newGame4() {
   gs = { stageNum: 4, miss: 0, frame: 0,
          ball: { x: 82, y: 185, vx: 0.35, vy: -2.3 },
          leftPaddle: false, rightPaddle: false,
+         leftPaddlePrev: false, rightPaddlePrev: false,
          pockets: Array(16).fill(false) };
   winTick = 0; s4FlashTimer = 0;
   s4LeftTouch = false; s4RightTouch = false;
@@ -749,8 +750,11 @@ function update4() {
   if (s4FlashTimer > 0) s4FlashTimer--;
   for (let i = 0; i < s4BumperFlash.length; i++) if (s4BumperFlash[i] > 0) s4BumperFlash[i]--;
 
+  const prevL = g.leftPaddle, prevR = g.rightPaddle;
   g.leftPaddle  = !!keys['z'] || !!keys['Z'] || s4LeftTouch;
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
+  const leftJust  = g.leftPaddle  && !prevL;
+  const rightJust = g.rightPaddle && !prevR;
 
   const b = g.ball;
   b.vy += 0.022; // gravity (2/3 speed)
@@ -790,15 +794,15 @@ function update4() {
     const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;  // push above surface
-      if (g.leftPaddle) {
-        // Active: flip launches ball — strong upward with rightward aim from inner tip
+      if (g.leftPaddle && leftJust) {
+        // Just pressed: strong launch
         b.vy = -Math.abs(b.vy);
         b.vx += t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Rest: heavy damping, ball rolls toward center drain
+        // Held or rest: weak damping, rolls toward drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx += 0.67;  // slope pushes ball rightward toward drain gap
+        b.vx += 0.67;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
@@ -808,15 +812,15 @@ function update4() {
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
-      if (g.rightPaddle) {
-        // Active: flip launches ball — strong upward with leftward aim from inner tip
+      if (g.rightPaddle && rightJust) {
+        // Just pressed: strong launch
         b.vy = -Math.abs(b.vy);
         b.vx -= t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Rest: heavy damping, ball rolls toward center drain
+        // Held or rest: weak damping, rolls toward drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx -= 0.67;  // slope pushes ball leftward toward drain gap
+        b.vx -= 0.67;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
