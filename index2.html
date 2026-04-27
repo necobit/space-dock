@@ -67,15 +67,15 @@ let s3TapDir = null, s3TapTimer = 0;
 let s3CountTick = 0;
 let s3GuideTick = 0;
 const GUIDE_ORDER = ['up','right','left','down'];
-const P4_HEX = [[0,-15],[13,-8],[13,8],[0,15],[-13,8],[-13,-8]];
 const POCKETS4_POS = [
-  ...P4_HEX.map(([dx,dy]) => [92+dx, 100+dy]),   // left O atom
-  ...P4_HEX.map(([dx,dy]) => [121+dx, 100+dy]),  // right O atom (adjacent = covalent bond)
+  [66,62],[80,62],[66,78],[80,78],    // left O lone pairs (0-3)
+  [100,62],[114,62],[100,78],[114,78], // shared bond electrons (4-7)
+  [134,62],[148,62],[134,78],[148,78], // right O lone pairs (8-11)
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
-const BUMPERS4 = [[97, 135], [117, 135], [107, 157]];
-let s4BumperFlash = [0, 0, 0];
+const BUMPERS4 = [[70, 155], [145, 155]];
+let s4BumperFlash = [0, 0];
 
 function launchStage(n) {
   if (n === 1) newGame1();
@@ -704,7 +704,7 @@ function newGame4() {
          pockets: Array(12).fill(false) };
   winTick = 0; s4FlashTimer = 0;
   s4LeftTouch = false; s4RightTouch = false;
-  s4BumperFlash = [0, 0, 0];
+  s4BumperFlash = [0, 0];
   state = 'PLAY4';
   hint.textContent = IS_TOUCH ? '左右タップ=パドル' : 'Z=左  X=右';
 }
@@ -712,7 +712,7 @@ function newGame4() {
 function update4() {
   const g = gs; g.frame++;
   if (s4FlashTimer > 0) s4FlashTimer--;
-  for (let i = 0; i < 3; i++) if (s4BumperFlash[i] > 0) s4BumperFlash[i]--;
+  for (let i = 0; i < s4BumperFlash.length; i++) if (s4BumperFlash[i] > 0) s4BumperFlash[i]--;
 
   g.leftPaddle  = !!keys['z'] || !!keys['Z'] || s4LeftTouch;
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
@@ -759,7 +759,7 @@ function update4() {
         // Active: flip launches ball — strong upward with rightward aim from inner tip
         b.vy = -Math.abs(b.vy);
         b.vx += t * 1.7;
-        if (Math.abs(b.vy) < 2.7) b.vy = -2.7;
+        if (Math.abs(b.vy) < 3.2) b.vy = -3.2;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
@@ -777,7 +777,7 @@ function update4() {
         // Active: flip launches ball — strong upward with leftward aim from inner tip
         b.vy = -Math.abs(b.vy);
         b.vx -= t * 1.7;
-        if (Math.abs(b.vy) < 2.7) b.vy = -2.7;
+        if (Math.abs(b.vy) < 3.2) b.vy = -3.2;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
@@ -980,10 +980,6 @@ function loop() {
     drawGraceS4(28, 185, false);
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
-    // O atom nuclei (adjacent = covalent bond O2)
-    px(90, 98, 4, 4, 5); px(119, 98, 4, 4, 5);
-    // Double bond indicator between atoms (shared electrons)
-    px(96, 97, 21, 2, 10); px(96, 103, 21, 2, 10);
     // Pocket clusters (electron shells)
     for (let i = 0; i < 12; i++) {
       const [bx, by] = POCKETS4_POS[i];
@@ -991,12 +987,15 @@ function loop() {
       px(bx-3, by-3,  6,  6, g.pockets[i] ? 12 : 3);
       if (g.pockets[i]) px(bx-1, by-1, 2, 2, 11);
     }
-    // O labels
+    // O atom nuclei in gaps between clusters (x-gap: 85-94 and 119-128; y-gap: 67-72)
+    px(88, 67, 4, 4, 5); px(88, 69, 2, 2, 14); // left O nucleus
+    px(122, 67, 4, 4, 5); px(122, 69, 2, 2, 14); // right O nucleus
+    // Labels: O on outer clusters, = in center
     ctx.fillStyle = P[10]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('O', 92, 122); ctx.fillText('O', 121, 122);
+    ctx.fillText('O', 73, 94); ctx.fillText('=', 107, 94); ctx.fillText('O', 141, 94);
     ctx.textAlign = 'left';
     // Bumpers
-    for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
+    for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
     // Electron (ball)
     px(g.ball.x-2, g.ball.y-2, 4, 4, 6);
     px(g.ball.x-1, g.ball.y-1, 2, 2, 11);
@@ -1020,12 +1019,11 @@ function loop() {
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
     // Bumpers (dim)
-    for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
+    for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
     // Phase 1 (1-70): pockets flash in place
     if (winTick <= 70) {
       const flash4 = (winTick % 20 < 10);
-      px(90, 98, 4, 4, flash4 ? 6 : 5); px(119, 98, 4, 4, flash4 ? 6 : 5);
-      px(96, 97, 21, 2, flash4 ? 11 : 10); px(96, 103, 21, 2, flash4 ? 11 : 10);
+      px(88, 67, 4, 4, flash4 ? 6 : 5); px(122, 67, 4, 4, flash4 ? 6 : 5);
       for (let i = 0; i < 12; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-5, by-5, 10, 10, 3);
@@ -1035,8 +1033,8 @@ function loop() {
     } else {
       // Phase 2 (70-140): O2 molecule animates toward Grace
       const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
-      const molX = Math.round(106 + (30 - 106) * moveT);
-      const molY = Math.round(100 + (153 - 100) * moveT);
+      const molX = Math.round(107 + (30 - 107) * moveT);
+      const molY = Math.round(70 + (153 - 70) * moveT);
       // Draw O2 molecule (two atom circles + double bond)
       px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
       px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
