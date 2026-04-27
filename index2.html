@@ -74,7 +74,7 @@ const POCKETS4_POS = [
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
-const BUMPERS4 = [[70, 155], [145, 155]];
+const BUMPERS4 = [[85, 155], [130, 155]];
 let s4BumperFlash = [0, 0];
 
 function launchStage(n) {
@@ -662,19 +662,22 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(66, cy-6,  8, 3, 12);
     px(74, cy-10, 8, 3, 12);
     px(82, cy-13, 8, 3, 12);
-    px(90, cy-16, 6, 3, 12);
+    px(90, cy-16, 8, 3, 12);
+    px(98, cy-19, 6, 3, 12);
   } else {
     // rest: angled DOWN toward center-drain
     px(58, cy-2,  8, 3, 9);
     px(66, cy+1,  8, 3, 9);
     px(74, cy+3,  8, 3, 9);
     px(82, cy+6,  8, 3, 9);
-    px(90, cy+8,  6, 3, 9);
+    px(90, cy+8,  8, 3, 9);
+    px(98, cy+10, 6, 3, 9);
   }
   // Right paddle: pivot at OUTER RIGHT (x=154)
   // Right pivot: yellow circle to indicate tap zone
   px(153, cy-1, 4, 1, 6); px(151, cy, 6, 5, 6); px(153, cy+5, 4, 1, 6);
   if (rightUp) {
+    px(110, cy-19, 8, 3, 12);
     px(118, cy-16, 8, 3, 12);
     px(126, cy-13, 8, 3, 12);
     px(134, cy-10, 8, 3, 12);
@@ -682,6 +685,7 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(150, cy-3,  4, 3, 12);
   } else {
     // rest: angled DOWN toward center-drain
+    px(110, cy+10, 8, 3, 9);
     px(118, cy+8,  8, 3, 9);
     px(126, cy+6,  8, 3, 9);
     px(134, cy+3,  8, 3, 9);
@@ -750,8 +754,8 @@ function update4() {
   // Left: pivot x=58; rest outer=y208 inner=y218 (droop); active outer=y210 inner=y194 (flip up)
   // Right: pivot x=154; mirror of left
   const cy4 = 210;
-  if (b.x >= 58 && b.x <= 96 && b.vy > 0) {
-    const t = (b.x - 58) / 38;  // 0=outer pivot, 1=inner tip
+  if (b.x >= 58 && b.x <= 104 && b.vy > 0) {
+    const t = (b.x - 58) / 46;  // 0=outer pivot, 1=inner tip
     const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;  // push above surface
@@ -768,8 +772,8 @@ function update4() {
       b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
     }
   }
-  if (b.x >= 118 && b.x <= 154 && b.vy > 0) {
-    const t = (154 - b.x) / 36;  // 0=outer pivot, 1=inner tip
+  if (b.x >= 110 && b.x <= 154 && b.vy > 0) {
+    const t = (154 - b.x) / 44;  // 0=outer pivot, 1=inner tip
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
@@ -980,6 +984,14 @@ function loop() {
     drawGraceS4(28, 185, false);
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
+    // O2 molecule: two rings of 8 proton dots, connected by bond lines
+    // Left O ring center (85,38), Right O ring center (129,38), radius 6
+    const RING6 = [[6,0],[4,-4],[0,-6],[-4,-4],[-6,0],[-4,4],[0,6],[4,4]];
+    for (const [dx, dy] of RING6) {
+      px(85+dx-1, 38+dy-1, 2, 2, 5);
+      px(129+dx-1, 38+dy-1, 2, 2, 5);
+    }
+    px(92, 36, 30, 1, 9); px(92, 40, 30, 1, 9); // double bond lines
     // Pocket clusters (electron shells)
     for (let i = 0; i < 12; i++) {
       const [bx, by] = POCKETS4_POS[i];
@@ -987,12 +999,9 @@ function loop() {
       px(bx-3, by-3,  6,  6, g.pockets[i] ? 12 : 3);
       if (g.pockets[i]) px(bx-1, by-1, 2, 2, 11);
     }
-    // O atom nuclei in gaps between clusters (x-gap: 85-94 and 119-128; y-gap: 67-72)
-    px(88, 67, 4, 4, 5); px(88, 69, 2, 2, 14); // left O nucleus
-    px(122, 67, 4, 4, 5); px(122, 69, 2, 2, 14); // right O nucleus
-    // Labels: O on outer clusters, = in center
+    // O labels under outer clusters
     ctx.fillStyle = P[10]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('O', 73, 94); ctx.fillText('=', 107, 94); ctx.fillText('O', 141, 94);
+    ctx.fillText('O', 73, 95); ctx.fillText('O', 141, 95);
     ctx.textAlign = 'left';
     // Bumpers
     for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
@@ -1023,7 +1032,13 @@ function loop() {
     // Phase 1 (1-70): pockets flash in place
     if (winTick <= 70) {
       const flash4 = (winTick % 20 < 10);
-      px(88, 67, 4, 4, flash4 ? 6 : 5); px(122, 67, 4, 4, flash4 ? 6 : 5);
+      const fc = flash4 ? 6 : 5;
+      const RING6 = [[6,0],[4,-4],[0,-6],[-4,-4],[-6,0],[-4,4],[0,6],[4,4]];
+      for (const [dx, dy] of RING6) {
+        px(85+dx-1, 38+dy-1, 2, 2, fc);
+        px(129+dx-1, 38+dy-1, 2, 2, fc);
+      }
+      px(92, 36, 30, 1, flash4 ? 11 : 9); px(92, 40, 30, 1, flash4 ? 11 : 9);
       for (let i = 0; i < 12; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-5, by-5, 10, 10, 3);
@@ -1031,10 +1046,10 @@ function loop() {
         if (flash4) px(bx-1, by-1, 2, 2, 11);
       }
     } else {
-      // Phase 2 (70-140): O2 molecule animates toward Grace
+      // Phase 2 (70-140): O2 molecule animates toward Grace (stops above head)
       const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
       const molX = Math.round(107 + (30 - 107) * moveT);
-      const molY = Math.round(70 + (153 - 70) * moveT);
+      const molY = Math.round(38 + (138 - 38) * moveT);
       // Draw O2 molecule (two atom circles + double bond)
       px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
       px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
