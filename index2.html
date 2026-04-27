@@ -829,10 +829,9 @@ function update4() {
   for (let i = 0; i < POCKETS4_POS.length; i++) {
     if (g.pockets[i]) continue;
     const [bx, by] = POCKETS4_POS[i];
-    if (Math.abs(b.x - bx) < 7 && Math.abs(b.y - by) < 7 && b.vy < 0) {
+    if (Math.abs(b.x - bx) < 7 && Math.abs(b.y - by) < 7) {
       g.pockets[i] = true;
-      b.vy = Math.abs(b.vy);  // bounce back down
-      if (b.vy < 3) b.vy = 3;
+      if (b.vy < 0) { b.vy = Math.abs(b.vy); if (b.vy < 3) b.vy = 3; }
       if (g.pockets.every(p => p)) { state = 'WIN4'; winTick = 0; return; }
     }
   }
@@ -1020,10 +1019,6 @@ function loop() {
       px(bx-3, by-3, 6, 6, g.pockets[i] ? 5 : 2);
       if (g.pockets[i]) px(bx-2, by-2, 4, 4, 14);
     }
-    // O labels
-    ctx.fillStyle = P[5]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('O', 80, 100); ctx.fillText('O', 134, 100);
-    ctx.textAlign = 'left';
     // Bumpers
     for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
     // Electron (ball)
@@ -1031,6 +1026,10 @@ function loop() {
     px(g.ball.x-1, g.ball.y-1, 2, 2, 11);
     // Rocky with arm paddles
     drawRockyPaddle4(107, 210, g.leftPaddle, g.rightPaddle);
+    // Z/X keyboard labels at pivot points
+    ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('Z', 58, 207); ctx.fillText('X', 154, 207);
+    ctx.textAlign = 'left';
     // HUD
     ctx.fillStyle = P[4]; ctx.font = '6px monospace';
     ctx.textAlign = 'right'; ctx.fillText('MISS ' + g.miss + '/3', W-2, 8);
@@ -1088,10 +1087,41 @@ function loop() {
   }
   else if (state === 'GAMEOVER') {
     const sn = gs ? gs.stageNum : 1;
-    drawCenterText(
-      ['GAME OVER','','STAGE ' + sn,'SCORE: ' + (gs ? (gs.score | 0) : 0),'','PRESS SPACE / TAP'],
-      [4,0,11,11,0,6]
-    );
+    if (sn === 4 && gs) {
+      const g = gs;
+      px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
+      drawGraceS4(28, 185, false);
+      ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
+      ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      px(80, 78, 54, 1, 9);
+      for (let i = 0; i < POCKETS4_POS.length; i++) {
+        const [bx, by] = POCKETS4_POS[i];
+        px(bx-4, by-4, 8, 8, g.pockets[i] ? 3 : 1);
+        px(bx-3, by-3, 6, 6, g.pockets[i] ? 5 : 2);
+        if (g.pockets[i]) px(bx-2, by-2, 4, 4, 14);
+      }
+      for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
+      drawRockyPaddle4(107, 210, false, false);
+      ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('Z', 58, 207); ctx.fillText('X', 154, 207); ctx.textAlign = 'left';
+      ctx.fillStyle = P[4]; ctx.font = '6px monospace';
+      ctx.textAlign = 'right'; ctx.fillText('MISS 3/3', W-2, 8);
+      ctx.fillStyle = P[12]; ctx.textAlign = 'left';
+      ctx.fillText(g.pockets.filter(Boolean).length + '/16', 59, 8);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = P[4]; ctx.font = '8px monospace'; ctx.fillText('GAME OVER', 109, 132);
+      if (gameoverLockTimer <= 0) {
+        ctx.fillStyle = P[6]; ctx.font = '5px monospace'; ctx.fillText('PRESS SPACE / TAP', 109, 228);
+      }
+      ctx.textAlign = 'left';
+    } else {
+      drawCenterText(
+        ['GAME OVER','','STAGE ' + sn,'SCORE: ' + (gs ? (gs.score | 0) : 0),'','PRESS SPACE / TAP'],
+        [4,0,11,11,0,6]
+      );
+    }
   }
 
   requestAnimationFrame(loop);
