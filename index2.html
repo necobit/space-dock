@@ -75,8 +75,8 @@ const POCKETS4_POS = [
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
-const BUMPERS4 = [[85, 155], [130, 155]];
-let s4BumperFlash = [0, 0];
+const BUMPERS4 = [[85, 155], [130, 155], [80, 30], [134, 30]];
+let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
 
 function launchStage(n) {
@@ -704,7 +704,7 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(126, cy-13, 8, 3, 12);
     px(134, cy-10, 8, 3, 12);
     px(142, cy-6,  8, 3, 12);
-    px(150, cy-3,  4, 3, 12);
+    px(150, cy-3,  7, 3, 12);
   } else {
     // rest: angled DOWN toward center-drain
     px(114, cy+9,  4, 3, 9);
@@ -712,7 +712,7 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(126, cy+6,  8, 3, 9);
     px(134, cy+3,  8, 3, 9);
     px(142, cy+1,  8, 3, 9);
-    px(150, cy-2,  4, 3, 9);
+    px(150, cy-2,  7, 3, 9);
   }
 }
 
@@ -730,7 +730,7 @@ function newGame4() {
          pockets: Array(16).fill(false) };
   winTick = 0; s4FlashTimer = 0;
   s4LeftTouch = false; s4RightTouch = false;
-  s4BumperFlash = [0, 0];
+  s4BumperFlash = [0, 0, 0, 0];
   state = 'PLAY4';
   hint.textContent = IS_TOUCH ? '左右タップ=パドル' : 'Z=左  X=右';
 }
@@ -794,8 +794,8 @@ function update4() {
       b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
     }
   }
-  if (b.x >= 114 && b.x <= 154 && b.vy > 0) {
-    const t = (154 - b.x) / 40;  // 0=outer pivot (x=154), 1=inner tip (x=114)
+  if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
+    const t = (W-3 - b.x) / 43;  // 0=outer pivot (x=157=W-3), 1=inner tip (x=114)
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
