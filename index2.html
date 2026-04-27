@@ -69,8 +69,8 @@ let s3GuideTick = 0;
 const GUIDE_ORDER = ['up','right','left','down'];
 const P4_HEX = [[0,-15],[13,-8],[13,8],[0,15],[-13,8],[-13,-8]];
 const POCKETS4_POS = [
-  ...P4_HEX.map(([dx,dy]) => [80+dx, 65+dy]),
-  ...P4_HEX.map(([dx,dy]) => [134+dx, 65+dy]),
+  ...P4_HEX.map(([dx,dy]) => [92+dx, 100+dy]),   // left O atom
+  ...P4_HEX.map(([dx,dy]) => [121+dx, 100+dy]),  // right O atom (adjacent = covalent bond)
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
@@ -623,15 +623,20 @@ function drawTunnel3() {
 function drawGraceS4(cx, cy, helmetOff) {
   const hy = cy - 28;
   if (!helmetOff) {
-    px(cx-4, hy,   8, 8, 9);
-    px(cx-3, hy+1, 6, 6, 10);
-    px(cx-2, hy+2, 4, 4, 12);
-    px(cx-2, hy+3, 2, 1, 11);
+    // Helmet larger than head so removal is obvious
+    px(cx-6, hy-2, 12, 12, 9);   // outer helmet (12×12)
+    px(cx-5, hy-1, 10, 10, 10);  // visor glass
+    px(cx-4, hy,    8,  8, 12);  // cyan inner
+    px(cx-3, hy+1,  3,  2, 11);  // reflection
   } else {
+    // Head exposed
     px(cx-4, hy,   8, 8, 14);
     px(cx-3, hy+2, 2, 2, 5);
     px(cx+1, hy+2, 2, 2, 5);
     px(cx-2, hy+5, 4, 1, 4);
+    // Removed helmet floating above (drawn separately)
+    px(cx-6, hy-14, 12, 12, 9);
+    px(cx-5, hy-13, 10, 10, 10);
   }
   px(cx-2, hy+8,  4, 2, 9);
   px(cx-5, hy+10, 10, 14, 4);
@@ -650,7 +655,8 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
   // Left paddle: pivot at OUTER LEFT (x=58)
   // Rest: droops toward center (inner=x96 is lower)
   // Active: flips up (inner=x96 is higher)
-  px(55, cy-3, 6, 8, 3);  // left pivot anchor
+  // Left pivot: yellow circle to indicate tap zone
+  px(57, cy-1, 4, 1, 6); px(55, cy, 6, 5, 6); px(57, cy+5, 4, 1, 6);
   if (leftUp) {
     px(58, cy-3,  8, 3, 12);
     px(66, cy-6,  8, 3, 12);
@@ -666,7 +672,8 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(90, cy+8,  6, 3, 9);
   }
   // Right paddle: pivot at OUTER RIGHT (x=154)
-  px(152, cy-3, 6, 8, 3); // right pivot anchor
+  // Right pivot: yellow circle to indicate tap zone
+  px(153, cy-1, 4, 1, 6); px(151, cy, 6, 5, 6); px(153, cy+5, 4, 1, 6);
   if (rightUp) {
     px(118, cy-16, 8, 3, 12);
     px(126, cy-13, 8, 3, 12);
@@ -692,7 +699,7 @@ function drawBumper4(bx, by, flash) {
 
 function newGame4() {
   gs = { stageNum: 4, miss: 0, frame: 0,
-         ball: { x: 82, y: 185, vx: 0.5, vy: -3.5 },
+         ball: { x: 82, y: 185, vx: 0.35, vy: -2.3 },
          leftPaddle: false, rightPaddle: false,
          pockets: Array(12).fill(false) };
   winTick = 0; s4FlashTimer = 0;
@@ -711,8 +718,8 @@ function update4() {
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
 
   const b = g.ball;
-  b.vy += 0.05; // gravity (lighter = slower, easier to follow)
-  if (b.vy > 5) b.vy = 5;
+  b.vy += 0.033; // gravity (~2/3 of previous)
+  if (b.vy > 3.5) b.vy = 3.5;
   b.x += b.vx; b.y += b.vy;
 
   // Wall bounces
@@ -731,8 +738,8 @@ function update4() {
       if (dot < 0) {
         b.vx -= 2*dot*nx * 1.15;
         b.vy -= 2*dot*ny * 1.15;
-        b.vx = Math.max(-5, Math.min(5, b.vx));
-        b.vy = Math.max(-5, Math.min(5, b.vy));
+        b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
+        b.vy = Math.max(-3.5, Math.min(3.5, b.vy));
       }
       b.x = bx + nx*10; b.y = by + ny*10;
       s4BumperFlash[i] = 12;
@@ -751,14 +758,14 @@ function update4() {
       if (g.leftPaddle) {
         // Active: flip launches ball — strong upward with rightward aim from inner tip
         b.vy = -Math.abs(b.vy);
-        b.vx += t * 2.5;
-        if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+        b.vx += t * 1.7;
+        if (Math.abs(b.vy) < 2.7) b.vy = -2.7;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx += 1.5;  // slope pushes ball rightward toward drain gap
+        b.vx += 1.0;  // slope pushes ball rightward toward drain gap
       }
-      b.vx = Math.max(-5, Math.min(5, b.vx));
+      b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
     }
   }
   if (b.x >= 118 && b.x <= 154 && b.vy > 0) {
@@ -769,14 +776,14 @@ function update4() {
       if (g.rightPaddle) {
         // Active: flip launches ball — strong upward with leftward aim from inner tip
         b.vy = -Math.abs(b.vy);
-        b.vx -= t * 2.5;
-        if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+        b.vx -= t * 1.7;
+        if (Math.abs(b.vy) < 2.7) b.vy = -2.7;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx -= 1.5;  // slope pushes ball leftward toward drain gap
+        b.vx -= 1.0;  // slope pushes ball leftward toward drain gap
       }
-      b.vx = Math.max(-5, Math.min(5, b.vx));
+      b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
     }
   }
 
@@ -788,8 +795,8 @@ function update4() {
     const side = Math.random() > 0.5 ? 1 : -1;
     b.x = 107 - side * 25;  // x=82 (left paddle) or x=132 (right paddle)
     b.y = 185;
-    b.vx = side * 0.5;
-    b.vy = -(3.5 + Math.random() * 0.5);
+    b.vx = side * 0.35;
+    b.vy = -(2.3 + Math.random() * 0.3);
   }
 
   // Pocket collision — ball must be moving upward (vy < 0)
@@ -973,8 +980,10 @@ function loop() {
     drawGraceS4(28, 185, false);
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
-    // O atom nuclei
-    px(78, 63, 4, 4, 5); px(132, 63, 4, 4, 5);
+    // O atom nuclei (adjacent = covalent bond O2)
+    px(90, 98, 4, 4, 5); px(119, 98, 4, 4, 5);
+    // Double bond indicator between atoms (shared electrons)
+    px(96, 97, 21, 2, 10); px(96, 103, 21, 2, 10);
     // Pocket clusters (electron shells)
     for (let i = 0; i < 12; i++) {
       const [bx, by] = POCKETS4_POS[i];
@@ -984,7 +993,7 @@ function loop() {
     }
     // O labels
     ctx.fillStyle = P[10]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('O', 80, 97); ctx.fillText('O', 134, 97);
+    ctx.fillText('O', 92, 122); ctx.fillText('O', 121, 122);
     ctx.textAlign = 'left';
     // Bumpers
     for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
@@ -1004,30 +1013,44 @@ function loop() {
   }
   else if (state === 'WIN4') {
     winTick++;
-    // Grace removes helmet!
-    px(0, 0, 57, H, 1);
-    px(55, 0, 2, H, 3);
-    drawGraceS4(28, 185, true);
+    const helmOff = winTick > 130;
+    // Grace panel
+    px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
+    drawGraceS4(28, 185, helmOff);
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
-    // Bumpers (dim in win screen)
+    // Bumpers (dim)
     for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
-    // All pockets flashing
-    const flash4 = (winTick % 20 < 10);
-    px(78, 63, 4, 4, flash4 ? 6 : 5); px(132, 63, 4, 4, flash4 ? 6 : 5);
-    for (let i = 0; i < 12; i++) {
-      const [bx, by] = POCKETS4_POS[i];
-      px(bx-5, by-5, 10, 10, 3);
-      px(bx-3, by-3,  6,  6, flash4 ? 12 : 7);
-      if (flash4) px(bx-1, by-1, 2, 2, 11);
+    // Phase 1 (1-70): pockets flash in place
+    if (winTick <= 70) {
+      const flash4 = (winTick % 20 < 10);
+      px(90, 98, 4, 4, flash4 ? 6 : 5); px(119, 98, 4, 4, flash4 ? 6 : 5);
+      px(96, 97, 21, 2, flash4 ? 11 : 10); px(96, 103, 21, 2, flash4 ? 11 : 10);
+      for (let i = 0; i < 12; i++) {
+        const [bx, by] = POCKETS4_POS[i];
+        px(bx-5, by-5, 10, 10, 3);
+        px(bx-3, by-3,  6,  6, flash4 ? 12 : 7);
+        if (flash4) px(bx-1, by-1, 2, 2, 11);
+      }
+    } else {
+      // Phase 2 (70-140): O2 molecule animates toward Grace
+      const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
+      const molX = Math.round(106 + (30 - 106) * moveT);
+      const molY = Math.round(100 + (153 - 100) * moveT);
+      // Draw O2 molecule (two atom circles + double bond)
+      px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
+      px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
+      px(molX-2, molY-1, 4, 2, 11); px(molX-2, molY+3, 4, 2, 11);
     }
-    ctx.textAlign = 'center';
-    ctx.fillStyle = P[8]; ctx.font = '7px monospace'; ctx.fillText('O2', 107, 100);
-    ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 4', W/2, 118);
-    ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', W/2, 130);
-    ctx.fillStyle = P[14]; ctx.font = '6px monospace'; ctx.fillText('BREATHABLE!', W/2, 142);
-    ctx.textAlign = 'left';
-    if (winTick > 180) {
+    // Phase 3 (130+): text
+    if (winTick > 130) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 4', W/2, 165);
+      ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', W/2, 177);
+      ctx.fillStyle = P[14]; ctx.font = '6px monospace'; ctx.fillText('BREATHABLE!', W/2, 189);
+      ctx.textAlign = 'left';
+    }
+    if (winTick > 280) {
       ctx.fillStyle = P[6]; ctx.font = '6px monospace'; ctx.textAlign = 'center';
       ctx.fillText('PRESS SPACE / TAP', W/2, 228);
       ctx.textAlign = 'left';
