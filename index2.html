@@ -227,7 +227,7 @@ C.addEventListener('click', e => {
 });
 
 function handleAction() {
-  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3' || state === 'PLAY4') return;
+  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3' || state === 'PLAY4' || state === 'INTRO4') return;
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
   if (state === 'WIN3' || state === 'WIN4' || state === 'GAMEOVER') {
@@ -741,8 +741,8 @@ function newGame4() {
   s4LeftTouch = false; s4RightTouch = false;
   s4BumperFlash = [0, 0, 0, 0];
   s4LeftFlipTimer = 0; s4RightFlipTimer = 0;
-  state = 'PLAY4';
-  hint.textContent = IS_TOUCH ? '左右タップ=パドル' : 'Z=左  X=右';
+  state = 'INTRO4';
+  hint.textContent = '';
 }
 
 function update4() {
@@ -1023,6 +1023,16 @@ function loop() {
       ctx.fillText('PRESS SPACE / TAP', W/2, 228);
       ctx.textAlign = 'left';
     }
+  }
+  else if (state === 'INTRO4') {
+    winTick++;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = P[12]; ctx.font = '10px monospace';
+    ctx.fillText('Rocky', W/2, H/2 - 16);
+    ctx.fillStyle = P[11]; ctx.font = '8px monospace';
+    ctx.fillText('make O2!', W/2, H/2 + 4);
+    ctx.textAlign = 'left';
+    if (winTick > 180) { state = 'PLAY4'; winTick = 0; }
   }
   else if (state === 'PLAY4') {
     update4();
