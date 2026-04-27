@@ -78,6 +78,7 @@ const POCKETS4_POS = [
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
+let s4LeftFlipTimer = 0, s4RightFlipTimer = 0;
 const BUMPERS4 = [[85, 155], [130, 155], [80, 50], [134, 50]];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
@@ -741,6 +742,7 @@ function newGame4() {
   winTick = 0; s4FlashTimer = 0;
   s4LeftTouch = false; s4RightTouch = false;
   s4BumperFlash = [0, 0, 0, 0];
+  s4LeftFlipTimer = 0; s4RightFlipTimer = 0;
   state = 'PLAY4';
   hint.textContent = IS_TOUCH ? '左右タップ=パドル' : 'Z=左  X=右';
 }
@@ -755,6 +757,11 @@ function update4() {
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
   const leftJust  = g.leftPaddle  && !prevL;
   const rightJust = g.rightPaddle && !prevR;
+  // Flip timers: visual-only up position lasts 10 frames after press
+  if (leftJust)  s4LeftFlipTimer  = 10;
+  if (rightJust) s4RightFlipTimer = 10;
+  if (s4LeftFlipTimer  > 0) s4LeftFlipTimer--;
+  if (s4RightFlipTimer > 0) s4RightFlipTimer--;
 
   const b = g.ball;
   b.vy += 0.022; // gravity (2/3 speed)
@@ -789,20 +796,19 @@ function update4() {
   // Left: pivot x=58; rest outer=y208 inner=y218 (droop); active outer=y210 inner=y194 (flip up)
   // Right: pivot x=154; mirror of left
   const cy4 = 210;
-  // Left paddle: just-press uses active surface; held/rest uses rest surface
-  // Rest normal (0.232,-0.973) reflects ball rightward toward drain gap
+  // Physics always uses rest surface (slopes toward drain gap).
+  // Visual flip is separate (s4LeftFlipTimer). Strong launch only on just-press.
+  // Left rest normal (0.232,-0.973): reflects ball rightward toward drain
   if (b.x >= 58 && b.x <= 100 && b.vy > 0) {
     const t = (b.x - 58) / 42;
-    const leftActPhys = g.leftPaddle && leftJust;
-    const surfY = leftActPhys ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
+    const surfY = cy4 - 2 + t * 10;  // always rest surface
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
-      if (leftActPhys) {
+      if (leftJust) {
         b.vy = -Math.abs(b.vy);
         b.vx += t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Rest slope reflection: guides ball rightward toward drain
         const dot = b.vx * 0.232 + b.vy * (-0.973);
         b.vx = (b.vx - 2 * dot * 0.232) * 0.3;
         b.vy = (b.vy - 2 * dot * (-0.973)) * 0.3;
@@ -810,20 +816,17 @@ function update4() {
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
   }
-  // Right paddle: same logic
-  // Rest normal (-0.227,-0.975) reflects ball leftward toward drain gap
+  // Right rest normal (-0.227,-0.975): reflects ball leftward toward drain
   if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
     const t = (W-3 - b.x) / 43;
-    const rightActPhys = g.rightPaddle && rightJust;
-    const surfY = rightActPhys ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
+    const surfY = cy4 - 2 + t * 10;  // always rest surface
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
-      if (rightActPhys) {
+      if (rightJust) {
         b.vy = -Math.abs(b.vy);
         b.vx -= t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Rest slope reflection: guides ball leftward toward drain
         const dot = b.vx * (-0.227) + b.vy * (-0.975);
         b.vx = (b.vx - 2 * dot * (-0.227)) * 0.3;
         b.vy = (b.vy - 2 * dot * (-0.975)) * 0.3;
@@ -1044,7 +1047,7 @@ function loop() {
     px(g.ball.x-2, g.ball.y-2, 4, 4, 6);
     px(g.ball.x-1, g.ball.y-1, 2, 2, 11);
     // Rocky with arm paddles
-    drawRockyPaddle4(107, 210, g.leftPaddle, g.rightPaddle);
+    drawRockyPaddle4(107, 210, s4LeftFlipTimer > 0, s4RightFlipTimer > 0);
     // Z/X keyboard labels at pivot points
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('Z', 58, 207); ctx.fillText('X', 154, 207);
