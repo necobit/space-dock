@@ -11,7 +11,7 @@ body {
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   height:100vh;
   overflow:hidden;
   font-family:monospace;
@@ -30,9 +30,9 @@ const hint = document.getElementById('hint');
 ctx.imageSmoothingEnabled = false;
 
 const W = 160, H = 240;
-const SCALE = Math.floor(Math.min(window.innerWidth / W, (window.innerHeight - 30) / H));
-C.width = W * SCALE;
-C.height = H * SCALE;
+const SCALE = Math.min(window.innerWidth / W, (window.innerHeight - 30) / H);
+C.width  = Math.round(W * SCALE);
+C.height = Math.round(H * SCALE);
 ctx.scale(SCALE, SCALE);
 
 const P = [
