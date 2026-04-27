@@ -1041,12 +1041,12 @@ function loop() {
     }
     for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
     drawRockyPaddle4(107, 210, false, false);
-    // Overlay text at top of play area
+    // Overlay text between O2 rings and upper bumpers
     ctx.textAlign = 'center';
     ctx.fillStyle = P[12]; ctx.font = '10px monospace';
-    ctx.fillText('Rocky', 109, 30);
+    ctx.fillText('Rocky', 109, 115);
     ctx.fillStyle = P[11]; ctx.font = '8px monospace';
-    ctx.fillText('make O2!', 109, 46);
+    ctx.fillText('make O2!', 109, 130);
     ctx.textAlign = 'left';
     if (winTick > 180) { state = 'PLAY4'; winTick = 0; }
   }
