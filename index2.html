@@ -1050,7 +1050,7 @@ function loop() {
   }
   else if (state === 'WIN4') {
     winTick++;
-    const helmOff = winTick > 130;
+    const helmOff = winTick > 200;
     // Grace panel
     px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
     drawGraceS4(28, 185, helmOff);
@@ -1074,21 +1074,21 @@ function loop() {
       // Phase 2 (70-140): O2 molecule animates toward Grace (stops above head)
       const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
       const molX = Math.round(107 + (30 - 107) * moveT);
-      const molY = Math.round(78 + (138 - 78) * moveT);
+      const molY = Math.round(78 + (120 - 78) * moveT);
       // Draw O2 molecule (two atom circles + double bond)
       px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
       px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
       px(molX-2, molY-1, 4, 2, 11); px(molX-2, molY+3, 4, 2, 11);
     }
-    // Phase 3 (130+): text
-    if (winTick > 130) {
+    // Phase 3 (200+): text (after helmet comes off)
+    if (winTick > 200) {
       ctx.textAlign = 'center';
       ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 4', W/2, 165);
       ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', W/2, 177);
       ctx.fillStyle = P[14]; ctx.font = '6px monospace'; ctx.fillText('BREATHABLE!', W/2, 189);
       ctx.textAlign = 'left';
     }
-    if (winTick > 280) {
+    if (winTick > 350) {
       ctx.fillStyle = P[6]; ctx.font = '6px monospace'; ctx.textAlign = 'center';
       ctx.fillText('PRESS SPACE / TAP', W/2, 228);
       ctx.textAlign = 'left';
