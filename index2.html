@@ -647,20 +647,26 @@ function drawGraceS4(cx, cy, helmetOff) {
 }
 
 function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
-  // Left paddle: pivot at OUTER LEFT (x=58), inner tip at x=96 flips up
-  px(55, cy-3, 6, 6, 3);  // left pivot anchor
+  // Left paddle: pivot at OUTER LEFT (x=58)
+  // Rest: droops toward center (inner=x96 is lower)
+  // Active: flips up (inner=x96 is higher)
+  px(55, cy-3, 6, 8, 3);  // left pivot anchor
   if (leftUp) {
-    // angled: outer end stays at cy, inner tip rises to cy-16
     px(58, cy-3,  8, 3, 12);
     px(66, cy-6,  8, 3, 12);
     px(74, cy-10, 8, 3, 12);
     px(82, cy-13, 8, 3, 12);
     px(90, cy-16, 6, 3, 12);
   } else {
-    px(58, cy-3, 38, 3, 9);
+    // rest: angled DOWN toward center-drain
+    px(58, cy-2,  8, 3, 9);
+    px(66, cy+1,  8, 3, 9);
+    px(74, cy+3,  8, 3, 9);
+    px(82, cy+6,  8, 3, 9);
+    px(90, cy+8,  6, 3, 9);
   }
-  // Right paddle: pivot at OUTER RIGHT (x=154), inner tip at x=118 flips up
-  px(152, cy-3, 6, 6, 3); // right pivot anchor
+  // Right paddle: pivot at OUTER RIGHT (x=154)
+  px(152, cy-3, 6, 8, 3); // right pivot anchor
   if (rightUp) {
     px(118, cy-16, 8, 3, 12);
     px(126, cy-13, 8, 3, 12);
@@ -668,7 +674,12 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(142, cy-6,  8, 3, 12);
     px(150, cy-3,  4, 3, 12);
   } else {
-    px(118, cy-3, 36, 3, 9);
+    // rest: angled DOWN toward center-drain
+    px(118, cy+8,  8, 3, 9);
+    px(126, cy+6,  8, 3, 9);
+    px(134, cy+3,  8, 3, 9);
+    px(142, cy+1,  8, 3, 9);
+    px(150, cy-2,  4, 3, 9);
   }
 }
 
@@ -681,7 +692,7 @@ function drawBumper4(bx, by, flash) {
 
 function newGame4() {
   gs = { stageNum: 4, miss: 0, frame: 0,
-         ball: { x: 107, y: 170, vx: 1.5, vy: -3.5 },
+         ball: { x: 82, y: 185, vx: 0.5, vy: -3.5 },
          leftPaddle: false, rightPaddle: false,
          pockets: Array(12).fill(false) };
   winTick = 0; s4FlashTimer = 0;
@@ -728,34 +739,44 @@ function update4() {
     }
   }
 
-  // Paddle hit zones (cy4=210; flat top at 207, raised inner tip at 194)
+  // Paddle collision with angled surfaces (cy4=210)
+  // Left: pivot x=58; rest outer=y208 inner=y218 (droop); active outer=y210 inner=y194 (flip up)
+  // Right: pivot x=154; mirror of left
   const cy4 = 210;
-  const lPadY = cy4 - (g.leftPaddle  ? 16 : 3);
-  const rPadY = cy4 - (g.rightPaddle ? 16 : 3);
-
-  // Left paddle: pivot at x=58 (outer), inner tip at x=96 flips up → sends ball RIGHT
-  if (b.x >= 60 && b.x <= 96 && b.y+2 >= lPadY && b.y-2 <= lPadY+3 && b.vy > 0) {
-    b.vy = -Math.abs(b.vy);
-    if (g.leftPaddle) {
-      const t = (b.x - 58) / 38;  // 0=outer pivot, 1=inner tip
-      b.vx += t * 2.5;            // inner tip → strong rightward push
-      if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
-    } else {
-      if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+  if (b.x >= 58 && b.x <= 96 && b.vy > 0) {
+    const t = (b.x - 58) / 38;  // 0=outer pivot, 1=inner tip
+    const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
+    if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
+      b.y = surfY - 3;  // push above surface
+      if (g.leftPaddle) {
+        // Active: flip launches ball — strong upward with rightward aim from inner tip
+        b.vy = -Math.abs(b.vy);
+        b.vx += t * 2.5;
+        if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+      } else {
+        // Rest: heavy damping, ball rolls toward center drain
+        b.vy = -Math.abs(b.vy) * 0.15;
+        b.vx += 1.5;  // slope pushes ball rightward toward drain gap
+      }
+      b.vx = Math.max(-5, Math.min(5, b.vx));
     }
-    b.vx = Math.max(-5, Math.min(5, b.vx));
   }
-  // Right paddle: pivot at x=154 (outer), inner tip at x=118 flips up → sends ball LEFT
-  if (b.x >= 118 && b.x <= 154 && b.y+2 >= rPadY && b.y-2 <= rPadY+3 && b.vy > 0) {
-    b.vy = -Math.abs(b.vy);
-    if (g.rightPaddle) {
-      const t = (154 - b.x) / 36; // 0=outer pivot, 1=inner tip
-      b.vx -= t * 2.5;            // inner tip → strong leftward push
-      if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
-    } else {
-      if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
-    }
-    b.vx = Math.max(-5, Math.min(5, b.vx));
+  if (b.x >= 118 && b.x <= 154 && b.vy > 0) {
+    const t = (154 - b.x) / 36;  // 0=outer pivot, 1=inner tip
+    const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
+    if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
+      b.y = surfY - 3;
+      if (g.rightPaddle) {
+        // Active: flip launches ball — strong upward with leftward aim from inner tip
+        b.vy = -Math.abs(b.vy);
+        b.vx -= t * 2.5;
+        if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+      } else {
+        // Rest: heavy damping, ball rolls toward center drain
+        b.vy = -Math.abs(b.vy) * 0.15;
+        b.vx -= 1.5;  // slope pushes ball leftward toward drain gap
+      }
+      b.vx = Math.max(-5, Math.min(5, b.vx));
   }
 
   // Fall off bottom
@@ -763,8 +784,10 @@ function update4() {
     g.miss++;
     s4FlashTimer = 40;
     if (g.miss >= 3) { state = 'GAMEOVER'; return; }
-    b.x = 107; b.y = 170;
-    b.vx = (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 1.0);
+    const side = Math.random() > 0.5 ? 1 : -1;
+    b.x = 107 - side * 25;  // x=82 (left paddle) or x=132 (right paddle)
+    b.y = 185;
+    b.vx = side * 0.5;
     b.vy = -(3.5 + Math.random() * 0.5);
   }
 
