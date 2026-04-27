@@ -694,34 +694,34 @@ function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
     px(66, cy-6,  8, 3, 12);
     px(74, cy-10, 8, 3, 12);
     px(82, cy-13, 8, 3, 12);
-    px(90, cy-16, 8, 3, 12);
-    px(98, cy-17, 8, 3, 12);
+    px(90, cy-16, 6, 3, 12);
+    px(96, cy-17, 4, 3, 12);
   } else {
     // rest: angled DOWN toward center-drain
     px(58, cy-2,  8, 3, 9);
     px(66, cy+1,  8, 3, 9);
     px(74, cy+3,  8, 3, 9);
     px(82, cy+6,  8, 3, 9);
-    px(90, cy+8,  8, 3, 9);
-    px(98, cy+9,  8, 3, 9);
+    px(90, cy+8,  6, 3, 9);
+    px(96, cy+9,  4, 3, 9);
   }
   // Right paddle: pivot at OUTER RIGHT (x=154)
   // Right pivot: yellow circle to indicate tap zone
   px(153, cy-1, 4, 1, 6); px(151, cy, 6, 5, 6); px(153, cy+5, 4, 1, 6);
   if (rightUp) {
-    px(108, cy-17, 8, 3, 12);
-    px(116, cy-16, 8, 3, 12);
-    px(124, cy-13, 8, 3, 12);
-    px(132, cy-10, 8, 3, 12);
-    px(140, cy-6,  8, 3, 12);
+    px(114, cy-17, 4, 3, 12);
+    px(118, cy-16, 8, 3, 12);
+    px(126, cy-13, 8, 3, 12);
+    px(134, cy-10, 8, 3, 12);
+    px(142, cy-6,  8, 3, 12);
     px(150, cy-3,  7, 3, 12);
   } else {
     // rest: angled DOWN toward center-drain
-    px(108, cy+9,  8, 3, 9);
-    px(116, cy+8,  8, 3, 9);
-    px(124, cy+6,  8, 3, 9);
-    px(132, cy+3,  8, 3, 9);
-    px(140, cy+1,  8, 3, 9);
+    px(114, cy+9,  4, 3, 9);
+    px(118, cy+8,  8, 3, 9);
+    px(126, cy+6,  8, 3, 9);
+    px(134, cy+3,  8, 3, 9);
+    px(142, cy+1,  8, 3, 9);
     px(150, cy-2,  7, 3, 9);
   }
 }
@@ -792,10 +792,10 @@ function update4() {
   // Right: pivot x=154; mirror of left
   const cy4 = 210;
   // Left paddle: active surface when held, rest surface when not
-  if (b.x >= 58 && b.x <= 106 && b.vy > 0) {
-    const t = (b.x - 58) / 48;
+  if (b.x >= 58 && b.x <= 100 && b.vy > 0) {
+    const t = (b.x - 58) / 42;
     const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
-    if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
+    if (b.y + 2 >= surfY && b.y + 2 < surfY + 30) {
       b.y = surfY - 3;
       if (g.leftPaddle) {
         if (leftJust) {
@@ -817,10 +817,10 @@ function update4() {
     }
   }
   // Right paddle
-  if (b.x >= 108 && b.x <= W-3 && b.vy > 0) {
-    const t = (W-3 - b.x) / 49;
+  if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
+    const t = (W-3 - b.x) / 43;
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
-    if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
+    if (b.y + 2 >= surfY && b.y + 2 < surfY + 30) {
       b.y = surfY - 3;
       if (g.rightPaddle) {
         if (rightJust) {
