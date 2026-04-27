@@ -1026,11 +1026,27 @@ function loop() {
   }
   else if (state === 'INTRO4') {
     winTick++;
+    const g = gs;
+    // Draw full stage 4 field
+    px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
+    drawGraceS4(28, 185, false);
+    ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
+    ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    px(80, 78, 54, 1, 9);
+    for (let i = 0; i < POCKETS4_POS.length; i++) {
+      const [bx, by] = POCKETS4_POS[i];
+      px(bx-4, by-4, 8, 8, 1); px(bx-3, by-3, 6, 6, 2);
+    }
+    for (let i = 0; i < BUMPERS4.length; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
+    drawRockyPaddle4(107, 210, false, false);
+    // Overlay text at top of play area
     ctx.textAlign = 'center';
     ctx.fillStyle = P[12]; ctx.font = '10px monospace';
-    ctx.fillText('Rocky', W/2, H/2 - 16);
+    ctx.fillText('Rocky', 109, 30);
     ctx.fillStyle = P[11]; ctx.font = '8px monospace';
-    ctx.fillText('make O2!', W/2, H/2 + 4);
+    ctx.fillText('make O2!', 109, 46);
     ctx.textAlign = 'left';
     if (winTick > 180) { state = 'PLAY4'; winTick = 0; }
   }
