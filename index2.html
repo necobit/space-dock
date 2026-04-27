@@ -800,9 +800,9 @@ function update4() {
         b.vx += t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Held or rest: weak damping, rolls toward drain
-        b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx += 0.67;
+        // Held or rest: absorb energy, settle at lowest point
+        b.vy = -Math.abs(b.vy) * 0.1;
+        b.vx *= 0.4;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
@@ -818,9 +818,9 @@ function update4() {
         b.vx -= t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Held or rest: weak damping, rolls toward drain
-        b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx -= 0.67;
+        // Held or rest: absorb energy, settle at lowest point
+        b.vy = -Math.abs(b.vy) * 0.1;
+        b.vx *= 0.4;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
