@@ -853,13 +853,14 @@ function update4() {
     b.vy = -(1.5 + Math.random() * 0.2);
   }
 
-  // Pocket collision — ball must be moving upward (vy < 0)
+  // Pocket collision — both directions
   for (let i = 0; i < POCKETS4_POS.length; i++) {
     if (g.pockets[i]) continue;
     const [bx, by] = POCKETS4_POS[i];
     if (Math.abs(b.x - bx) < 7 && Math.abs(b.y - by) < 7) {
       g.pockets[i] = true;
-      if (b.vy < 0) { b.vy = Math.abs(b.vy); if (b.vy < 2) b.vy = 2; }
+      b.vy = -b.vy;
+      if (Math.abs(b.vy) < 2) b.vy = b.vy > 0 ? 2 : -2;
       if (g.pockets.every(p => p)) { state = 'WIN4'; winTick = 0; return; }
     }
   }
