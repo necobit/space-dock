@@ -750,7 +750,7 @@ function update4() {
 
   // Wall bounces
   if (b.x < 58)  { b.x = 58;  b.vx =  Math.abs(b.vx); }
-  if (b.x > 155) { b.x = 155; b.vx = -Math.abs(b.vx); }
+  if (b.x > W-3) { b.x = W-3; b.vx = -Math.abs(b.vx); }
   if (b.y < 14)  { b.y = 14;  b.vy =  Math.abs(b.vy); }
 
   // Bumper collisions
