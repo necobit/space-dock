@@ -19,16 +19,14 @@ body {
   font-family:monospace;
 }
 canvas { image-rendering:pixelated; image-rendering:crisp-edges; cursor:none; }
-#hint { color:#555; font-size:11px; margin-top:6px; letter-spacing:1px; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hint">PRESS SPACE / TAP</div>
 <script>
 const C = document.getElementById('c');
 const ctx = C.getContext('2d');
-const hint = document.getElementById('hint');
+const hint = { textContent: '' };
 ctx.imageSmoothingEnabled = false;
 
 const W = 160, H = 240;
