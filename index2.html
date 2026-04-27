@@ -789,38 +789,40 @@ function update4() {
   // Left: pivot x=58; rest outer=y208 inner=y218 (droop); active outer=y210 inner=y194 (flip up)
   // Right: pivot x=154; mirror of left
   const cy4 = 210;
+  // Left rest slope normal (pointing into field): direction (42,10) → CW90 = (10,-42), norm ≈ (0.232,-0.973)
+  // Right rest slope normal: direction (-43,10) → CCW90 = (-10,-43), norm ≈ (-0.227,-0.974)
   if (b.x >= 58 && b.x <= 100 && b.vy > 0) {
-    const t = (b.x - 58) / 42;  // 0=outer pivot, 1=inner tip
+    const t = (b.x - 58) / 42;
     const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
-      b.y = surfY - 3;  // push above surface
+      b.y = surfY - 3;
       if (g.leftPaddle && leftJust) {
-        // Just pressed: strong launch
         b.vy = -Math.abs(b.vy);
         b.vx += t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Held or rest: slope rolls ball toward drain gap
-        b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx += 0.5;
+        // Damped slope reflection — naturally guides ball rightward toward drain
+        const dot = b.vx * 0.232 + b.vy * (-0.973);
+        b.vx = (b.vx - 2 * dot * 0.232)  * 0.3;
+        b.vy = (b.vy - 2 * dot * (-0.973)) * 0.3;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
   }
   if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
-    const t = (W-3 - b.x) / 43;  // 0=outer pivot (x=157=W-3), 1=inner tip (x=114)
+    const t = (W-3 - b.x) / 43;
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
       if (g.rightPaddle && rightJust) {
-        // Just pressed: strong launch
         b.vy = -Math.abs(b.vy);
         b.vx -= t * 1.1;
         if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
-        // Held or rest: slope rolls ball toward drain gap
-        b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx -= 0.5;
+        // Damped slope reflection — naturally guides ball leftward toward drain
+        const dot = b.vx * (-0.227) + b.vy * (-0.974);
+        b.vx = (b.vx - 2 * dot * (-0.227)) * 0.3;
+        b.vy = (b.vy - 2 * dot * (-0.974)) * 0.3;
       }
       b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
