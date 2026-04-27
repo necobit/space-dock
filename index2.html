@@ -68,14 +68,14 @@ let s3CountTick = 0;
 let s3GuideTick = 0;
 const GUIDE_ORDER = ['up','right','left','down'];
 const POCKETS4_POS = [
-  // Left O ring: center (80,78), r=16, 8 pockets clockwise from right
-  [96,78],[91,67],[80,62],[69,67],[64,78],[69,89],[80,94],[91,89],
-  // Right O ring: center (134,78), r=16, 8 pockets clockwise from right
-  [150,78],[145,67],[134,62],[123,67],[118,78],[123,89],[134,94],[145,89],
+  // Left O ring: center (80,128), r=16, 8 pockets clockwise from right
+  [96,128],[91,117],[80,112],[69,117],[64,128],[69,139],[80,144],[91,139],
+  // Right O ring: center (134,128), r=16, 8 pockets clockwise from right
+  [150,128],[145,117],[134,112],[123,117],[118,128],[123,139],[134,144],[145,139],
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
-const BUMPERS4 = [[85, 155], [130, 155], [80, 30], [134, 30]];
+const BUMPERS4 = [[85, 155], [130, 155], [80, 95], [134, 95]];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
 
@@ -152,11 +152,9 @@ C.addEventListener('touchstart', e => {
     if (Math.abs(dx) > Math.abs(dy)) handleInput3(dx > 0 ? 'right' : 'left');
     else handleInput3(dy > 0 ? 'down' : 'up');
   } else if (state === 'PLAY4') {
-    const rect = C.getBoundingClientRect();
     s4LeftTouch = false; s4RightTouch = false;
     for (let i = 0; i < e.touches.length; i++) {
-      const gx = (e.touches[i].clientX - rect.left) / SCALE;
-      if (gx < 80) s4LeftTouch = true; else s4RightTouch = true;
+      if (e.touches[i].clientX < window.innerWidth / 2) s4LeftTouch = true; else s4RightTouch = true;
     }
   } else if (state === 'SELECT') {
     const rect = C.getBoundingClientRect();
@@ -177,11 +175,9 @@ C.addEventListener('touchmove', e => {
     gs.astro.x = clamp(gs.astro.x + dx * 0.8, 8, W - 8);
     touchX = e.touches[0].clientX;
   } else if (state === 'PLAY4') {
-    const rect = C.getBoundingClientRect();
     s4LeftTouch = false; s4RightTouch = false;
     for (let i = 0; i < e.touches.length; i++) {
-      const gx = (e.touches[i].clientX - rect.left) / SCALE;
-      if (gx < 80) s4LeftTouch = true; else s4RightTouch = true;
+      if (e.touches[i].clientX < window.innerWidth / 2) s4LeftTouch = true; else s4RightTouch = true;
     }
   }
   e.preventDefault();
@@ -189,14 +185,24 @@ C.addEventListener('touchmove', e => {
 C.addEventListener('touchend', e => {
   touchX = null;
   if (state === 'PLAY4') {
-    const rect = C.getBoundingClientRect();
     s4LeftTouch = false; s4RightTouch = false;
     for (let i = 0; i < e.touches.length; i++) {
-      const gx = (e.touches[i].clientX - rect.left) / SCALE;
-      if (gx < 80) s4LeftTouch = true; else s4RightTouch = true;
+      if (e.touches[i].clientX < window.innerWidth / 2) s4LeftTouch = true; else s4RightTouch = true;
     }
   } else { s4LeftTouch = false; s4RightTouch = false; }
 }, { passive: false });
+// Document-level touch: catches touches outside canvas (dead zone on sides)
+function updateS4TouchDoc(e) {
+  if (state !== 'PLAY4') return;
+  s4LeftTouch = false; s4RightTouch = false;
+  for (let i = 0; i < e.touches.length; i++) {
+    if (e.touches[i].clientX < window.innerWidth / 2) s4LeftTouch = true; else s4RightTouch = true;
+  }
+}
+document.addEventListener('touchstart', updateS4TouchDoc, { passive: true });
+document.addEventListener('touchmove',  updateS4TouchDoc, { passive: true });
+document.addEventListener('touchend',   updateS4TouchDoc, { passive: true });
+
 C.addEventListener('click', e => {
   if (state === 'PLAY3') {
     const rect = C.getBoundingClientRect();
@@ -744,8 +750,8 @@ function update4() {
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
 
   const b = g.ball;
-  b.vy += 0.033; // gravity (~2/3 of previous)
-  if (b.vy > 3.5) b.vy = 3.5;
+  b.vy += 0.022; // gravity (2/3 speed)
+  if (b.vy > 2.3) b.vy = 2.3;
   b.x += b.vx; b.y += b.vy;
 
   // Wall bounces
@@ -764,8 +770,8 @@ function update4() {
       if (dot < 0) {
         b.vx -= 2*dot*nx * 1.15;
         b.vy -= 2*dot*ny * 1.15;
-        b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
-        b.vy = Math.max(-3.5, Math.min(3.5, b.vy));
+        b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
+        b.vy = Math.max(-2.3, Math.min(2.3, b.vy));
       }
       b.x = bx + nx*10; b.y = by + ny*10;
       s4BumperFlash[i] = 12;
@@ -784,14 +790,14 @@ function update4() {
       if (g.leftPaddle) {
         // Active: flip launches ball — strong upward with rightward aim from inner tip
         b.vy = -Math.abs(b.vy);
-        b.vx += t * 1.7;
-        if (Math.abs(b.vy) < 3.2) b.vy = -3.2;
+        b.vx += t * 1.1;
+        if (Math.abs(b.vy) < 2.1) b.vy = -2.1;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx += 1.0;  // slope pushes ball rightward toward drain gap
+        b.vx += 0.67;  // slope pushes ball rightward toward drain gap
       }
-      b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
+      b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
     }
   }
   if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
@@ -802,14 +808,14 @@ function update4() {
       if (g.rightPaddle) {
         // Active: flip launches ball — strong upward with leftward aim from inner tip
         b.vy = -Math.abs(b.vy);
-        b.vx -= t * 1.7;
-        if (Math.abs(b.vy) < 3.2) b.vy = -3.2;
+        b.vx -= t * 1.1;
+        if (Math.abs(b.vy) < 2.1) b.vy = -2.1;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
-        b.vx -= 1.0;  // slope pushes ball leftward toward drain gap
+        b.vx -= 0.67;  // slope pushes ball leftward toward drain gap
       }
-      b.vx = Math.max(-3.5, Math.min(3.5, b.vx));
+      b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
     }
   }
 
@@ -821,8 +827,8 @@ function update4() {
     const side = Math.random() > 0.5 ? 1 : -1;
     b.x = 107 - side * 25;  // x=82 (left paddle) or x=132 (right paddle)
     b.y = 185;
-    b.vx = side * 0.35;
-    b.vy = -(2.3 + Math.random() * 0.3);
+    b.vx = side * 0.23;
+    b.vy = -(1.5 + Math.random() * 0.2);
   }
 
   // Pocket collision — ball must be moving upward (vy < 0)
@@ -831,7 +837,7 @@ function update4() {
     const [bx, by] = POCKETS4_POS[i];
     if (Math.abs(b.x - bx) < 7 && Math.abs(b.y - by) < 7) {
       g.pockets[i] = true;
-      if (b.vy < 0) { b.vy = Math.abs(b.vy); if (b.vy < 3) b.vy = 3; }
+      if (b.vy < 0) { b.vy = Math.abs(b.vy); if (b.vy < 2) b.vy = 2; }
       if (g.pockets.every(p => p)) { state = 'WIN4'; winTick = 0; return; }
     }
   }
@@ -1008,10 +1014,10 @@ function loop() {
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
     // O2: two proton rings, each ring = one O atom, pockets = proton positions
     // Ring outlines (faint circles)
-    ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
     // Bond line between rings (O-O)
-    px(80, 78, 54, 1, 9);
+    px(80, 128, 54, 1, 9);
     // Pockets = proton dot positions on rings
     for (let i = 0; i < POCKETS4_POS.length; i++) {
       const [bx, by] = POCKETS4_POS[i];
@@ -1052,9 +1058,9 @@ function loop() {
     // Phase 1 (1-70): rings flash in place
     if (winTick <= 70) {
       const flash4 = (winTick % 20 < 10);
-      ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
-      ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
-      px(80, 78, 54, 1, flash4 ? 11 : 9);
+      ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
+      px(80, 128, 54, 1, flash4 ? 11 : 9);
       for (let i = 0; i < POCKETS4_POS.length; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-4, by-4, 8, 8, flash4 ? 3 : 2);
@@ -1065,7 +1071,7 @@ function loop() {
       // Phase 2 (70-140): O2 molecule animates toward Grace (stops above head)
       const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
       const molX = Math.round(107 + (30 - 107) * moveT);
-      const molY = Math.round(78 + (138 - 78) * moveT);
+      const molY = Math.round(128 + (138 - 128) * moveT);
       // Draw O2 molecule (two atom circles + double bond)
       px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
       px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
@@ -1093,9 +1099,9 @@ function loop() {
       drawGraceS4(28, 185, false);
       ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
       ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
-      ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-      ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-      px(80, 78, 54, 1, 9);
+      ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      px(80, 128, 54, 1, 9);
       for (let i = 0; i < POCKETS4_POS.length; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-4, by-4, 8, 8, g.pockets[i] ? 3 : 1);
@@ -1111,7 +1117,7 @@ function loop() {
       ctx.fillStyle = P[12]; ctx.textAlign = 'left';
       ctx.fillText(g.pockets.filter(Boolean).length + '/16', 59, 8);
       ctx.textAlign = 'center';
-      ctx.fillStyle = P[4]; ctx.font = '8px monospace'; ctx.fillText('GAME OVER', 109, 132);
+      ctx.fillStyle = P[4]; ctx.font = '8px monospace'; ctx.fillText('GAME OVER', 109, 170);
       if (gameoverLockTimer <= 0) {
         ctx.fillStyle = P[6]; ctx.font = '5px monospace'; ctx.fillText('PRESS SPACE / TAP', 109, 228);
       }
