@@ -647,24 +647,28 @@ function drawGraceS4(cx, cy, helmetOff) {
 }
 
 function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
-  // Pivot blocks (hinge points)
-  px(cx-10, cy-5, 8, 8, 3);
-  px(cx+3,  cy-5, 8, 8, 3);
-  // Left paddle (cyan when active)
+  // Left paddle: pivot at OUTER LEFT (x=58), inner tip at x=96 flips up
+  px(55, cy-3, 6, 6, 3);  // left pivot anchor
   if (leftUp) {
-    px(cx-17, cy-6,  8, 3, 12); px(cx-25, cy-10, 8, 3, 12);
-    px(cx-33, cy-14, 8, 3, 12); px(cx-41, cy-18, 8, 3, 12);
-    px(cx-49, cy-22, 8, 3, 12);
+    // angled: outer end stays at cy, inner tip rises to cy-16
+    px(58, cy-3,  8, 3, 12);
+    px(66, cy-6,  8, 3, 12);
+    px(74, cy-10, 8, 3, 12);
+    px(82, cy-13, 8, 3, 12);
+    px(90, cy-16, 6, 3, 12);
   } else {
-    px(cx-49, cy-3, 41, 3, 9);
+    px(58, cy-3, 38, 3, 9);
   }
-  // Right paddle (cyan when active)
+  // Right paddle: pivot at OUTER RIGHT (x=154), inner tip at x=118 flips up
+  px(152, cy-3, 6, 6, 3); // right pivot anchor
   if (rightUp) {
-    px(cx+9,  cy-6,  8, 3, 12); px(cx+17, cy-10, 8, 3, 12);
-    px(cx+25, cy-14, 8, 3, 12); px(cx+33, cy-18, 8, 3, 12);
-    px(cx+41, cy-22, 8, 3, 12);
+    px(118, cy-16, 8, 3, 12);
+    px(126, cy-13, 8, 3, 12);
+    px(134, cy-10, 8, 3, 12);
+    px(142, cy-6,  8, 3, 12);
+    px(150, cy-3,  4, 3, 12);
   } else {
-    px(cx+9, cy-3, 41, 3, 9);
+    px(118, cy-3, 36, 3, 9);
   }
 }
 
@@ -677,7 +681,7 @@ function drawBumper4(bx, by, flash) {
 
 function newGame4() {
   gs = { stageNum: 4, miss: 0, frame: 0,
-         ball: { x: 107, y: 170, vx: 2.0, vy: -4.5 },
+         ball: { x: 107, y: 170, vx: 1.5, vy: -3.5 },
          leftPaddle: false, rightPaddle: false,
          pockets: Array(12).fill(false) };
   winTick = 0; s4FlashTimer = 0;
@@ -696,8 +700,8 @@ function update4() {
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
 
   const b = g.ball;
-  b.vy += 0.10; // gravity
-  if (b.vy > 7) b.vy = 7;
+  b.vy += 0.05; // gravity (lighter = slower, easier to follow)
+  if (b.vy > 5) b.vy = 5;
   b.x += b.vx; b.y += b.vy;
 
   // Wall bounces
@@ -714,32 +718,44 @@ function update4() {
       const nx = dx/dist, ny = dy/dist;
       const dot = b.vx*nx + b.vy*ny;
       if (dot < 0) {
-        b.vx -= 2*dot*nx * 1.2;
-        b.vy -= 2*dot*ny * 1.2;
-        b.vx = Math.max(-6, Math.min(6, b.vx));
-        b.vy = Math.max(-7, Math.min(7, b.vy));
+        b.vx -= 2*dot*nx * 1.15;
+        b.vy -= 2*dot*ny * 1.15;
+        b.vx = Math.max(-5, Math.min(5, b.vx));
+        b.vy = Math.max(-5, Math.min(5, b.vy));
       }
       b.x = bx + nx*10; b.y = by + ny*10;
       s4BumperFlash[i] = 12;
     }
   }
 
-  // Paddle hit zones
+  // Paddle hit zones (cy4=210; flat top at 207, raised inner tip at 194)
   const cy4 = 210;
   const lPadY = cy4 - (g.leftPaddle  ? 16 : 3);
   const rPadY = cy4 - (g.rightPaddle ? 16 : 3);
 
+  // Left paddle: pivot at x=58 (outer), inner tip at x=96 flips up → sends ball RIGHT
   if (b.x >= 60 && b.x <= 96 && b.y+2 >= lPadY && b.y-2 <= lPadY+3 && b.vy > 0) {
     b.vy = -Math.abs(b.vy);
-    if (g.leftPaddle) b.vx -= 1.2;
-    b.vx = Math.max(-6, Math.min(6, b.vx));
-    if (Math.abs(b.vy) < 5.5) b.vy = -5.5;
+    if (g.leftPaddle) {
+      const t = (b.x - 58) / 38;  // 0=outer pivot, 1=inner tip
+      b.vx += t * 2.5;            // inner tip → strong rightward push
+      if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+    } else {
+      if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+    }
+    b.vx = Math.max(-5, Math.min(5, b.vx));
   }
+  // Right paddle: pivot at x=154 (outer), inner tip at x=118 flips up → sends ball LEFT
   if (b.x >= 118 && b.x <= 154 && b.y+2 >= rPadY && b.y-2 <= rPadY+3 && b.vy > 0) {
     b.vy = -Math.abs(b.vy);
-    if (g.rightPaddle) b.vx += 1.2;
-    b.vx = Math.max(-6, Math.min(6, b.vx));
-    if (Math.abs(b.vy) < 5.5) b.vy = -5.5;
+    if (g.rightPaddle) {
+      const t = (154 - b.x) / 36; // 0=outer pivot, 1=inner tip
+      b.vx -= t * 2.5;            // inner tip → strong leftward push
+      if (Math.abs(b.vy) < 4.0) b.vy = -4.0;
+    } else {
+      if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+    }
+    b.vx = Math.max(-5, Math.min(5, b.vx));
   }
 
   // Fall off bottom
@@ -748,8 +764,8 @@ function update4() {
     s4FlashTimer = 40;
     if (g.miss >= 3) { state = 'GAMEOVER'; return; }
     b.x = 107; b.y = 170;
-    b.vx = (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5);
-    b.vy = -(5.5 + Math.random() * 1.0);
+    b.vx = (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 1.0);
+    b.vy = -(3.5 + Math.random() * 0.5);
   }
 
   // Pocket collision — ball must be moving upward (vy < 0)
