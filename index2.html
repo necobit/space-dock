@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 <title>SPACE DOCK</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -12,7 +12,9 @@ body {
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  height:100vh;
+  height:100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing:border-box;
   overflow:hidden;
   font-family:monospace;
 }
@@ -30,7 +32,8 @@ const hint = document.getElementById('hint');
 ctx.imageSmoothingEnabled = false;
 
 const W = 160, H = 240;
-const SCALE = Math.min(window.innerWidth / W, (window.innerHeight - 30) / H);
+const safeTop = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+const SCALE = Math.min(window.innerWidth / W, (window.innerHeight - 30 - safeTop) / H);
 C.width  = Math.round(W * SCALE);
 C.height = Math.round(H * SCALE);
 ctx.scale(SCALE, SCALE);
@@ -68,14 +71,14 @@ let s3CountTick = 0;
 let s3GuideTick = 0;
 const GUIDE_ORDER = ['up','right','left','down'];
 const POCKETS4_POS = [
-  // Left O ring: center (80,128), r=16, 8 pockets clockwise from right
-  [96,128],[91,117],[80,112],[69,117],[64,128],[69,139],[80,144],[91,139],
-  // Right O ring: center (134,128), r=16, 8 pockets clockwise from right
-  [150,128],[145,117],[134,112],[123,117],[118,128],[123,139],[134,144],[145,139],
+  // Left O ring: center (80,78), r=16, 8 pockets clockwise from right
+  [96,78],[91,67],[80,62],[69,67],[64,78],[69,89],[80,94],[91,89],
+  // Right O ring: center (134,78), r=16, 8 pockets clockwise from right
+  [150,78],[145,67],[134,62],[123,67],[118,78],[123,89],[134,94],[145,89],
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
-const BUMPERS4 = [[85, 155], [130, 155], [80, 95], [134, 95]];
+const BUMPERS4 = [[85, 155], [130, 155], [80, 50], [134, 50]];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
 
@@ -751,7 +754,7 @@ function update4() {
 
   const b = g.ball;
   b.vy += 0.022; // gravity (2/3 speed)
-  if (b.vy > 2.3) b.vy = 2.3;
+  if (b.vy > 2.6) b.vy = 2.6;
   b.x += b.vx; b.y += b.vy;
 
   // Wall bounces
@@ -770,8 +773,8 @@ function update4() {
       if (dot < 0) {
         b.vx -= 2*dot*nx * 1.15;
         b.vy -= 2*dot*ny * 1.15;
-        b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
-        b.vy = Math.max(-2.3, Math.min(2.3, b.vy));
+        b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
+        b.vy = Math.max(-2.6, Math.min(2.6, b.vy));
       }
       b.x = bx + nx*10; b.y = by + ny*10;
       s4BumperFlash[i] = 12;
@@ -791,13 +794,13 @@ function update4() {
         // Active: flip launches ball — strong upward with rightward aim from inner tip
         b.vy = -Math.abs(b.vy);
         b.vx += t * 1.1;
-        if (Math.abs(b.vy) < 2.1) b.vy = -2.1;
+        if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
         b.vx += 0.67;  // slope pushes ball rightward toward drain gap
       }
-      b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
+      b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
   }
   if (b.x >= 114 && b.x <= W-3 && b.vy > 0) {
@@ -809,13 +812,13 @@ function update4() {
         // Active: flip launches ball — strong upward with leftward aim from inner tip
         b.vy = -Math.abs(b.vy);
         b.vx -= t * 1.1;
-        if (Math.abs(b.vy) < 2.1) b.vy = -2.1;
+        if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
       } else {
         // Rest: heavy damping, ball rolls toward center drain
         b.vy = -Math.abs(b.vy) * 0.15;
         b.vx -= 0.67;  // slope pushes ball leftward toward drain gap
       }
-      b.vx = Math.max(-2.3, Math.min(2.3, b.vx));
+      b.vx = Math.max(-2.6, Math.min(2.6, b.vx));
     }
   }
 
@@ -1014,10 +1017,10 @@ function loop() {
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
     // O2: two proton rings, each ring = one O atom, pockets = proton positions
     // Ring outlines (faint circles)
-    ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
     // Bond line between rings (O-O)
-    px(80, 128, 54, 1, 9);
+    px(80, 78, 54, 1, 9);
     // Pockets = proton dot positions on rings
     for (let i = 0; i < POCKETS4_POS.length; i++) {
       const [bx, by] = POCKETS4_POS[i];
@@ -1058,9 +1061,9 @@ function loop() {
     // Phase 1 (1-70): rings flash in place
     if (winTick <= 70) {
       const flash4 = (winTick % 20 < 10);
-      ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
-      ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
-      px(80, 128, 54, 1, flash4 ? 11 : 9);
+      ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[flash4 ? 6 : 2]; ctx.lineWidth = 1; ctx.stroke();
+      px(80, 78, 54, 1, flash4 ? 11 : 9);
       for (let i = 0; i < POCKETS4_POS.length; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-4, by-4, 8, 8, flash4 ? 3 : 2);
@@ -1071,7 +1074,7 @@ function loop() {
       // Phase 2 (70-140): O2 molecule animates toward Grace (stops above head)
       const moveT = Math.max(0, Math.min(1, (winTick - 70) / 70));
       const molX = Math.round(107 + (30 - 107) * moveT);
-      const molY = Math.round(128 + (138 - 128) * moveT);
+      const molY = Math.round(78 + (138 - 78) * moveT);
       // Draw O2 molecule (two atom circles + double bond)
       px(molX-13, molY-5, 10, 10, 3); px(molX-11, molY-3, 6, 6, 12);
       px(molX+3,  molY-5, 10, 10, 3); px(molX+5,  molY-3, 6, 6, 12);
@@ -1099,9 +1102,9 @@ function loop() {
       drawGraceS4(28, 185, false);
       ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
       ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
-      ctx.beginPath(); ctx.arc(80, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-      ctx.beginPath(); ctx.arc(134, 128, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
-      px(80, 128, 54, 1, 9);
+      ctx.beginPath(); ctx.arc(80, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(134, 78, 16, 0, Math.PI*2); ctx.strokeStyle = P[2]; ctx.lineWidth = 1; ctx.stroke();
+      px(80, 78, 54, 1, 9);
       for (let i = 0; i < POCKETS4_POS.length; i++) {
         const [bx, by] = POCKETS4_POS[i];
         px(bx-4, by-4, 8, 8, g.pockets[i] ? 3 : 1);
