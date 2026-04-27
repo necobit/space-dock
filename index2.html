@@ -798,10 +798,16 @@ function update4() {
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
       if (g.leftPaddle) {
-        // Active: reflect off angled surface with 0.7 damping; just-press gets full boost
-        b.vy = -Math.abs(b.vy) * 0.7;
-        b.vx = b.vx * 0.7 + t * 0.8;
-        if (leftJust && Math.abs(b.vy) < 2.5) b.vy = -2.5;
+        if (leftJust) {
+          // Just pressed: strong launch upward
+          b.vy = -Math.abs(b.vy);
+          b.vx += t * 1.1;
+          if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+        } else {
+          // Held: damped bounce, ball rolls outward toward pivot (x=58)
+          b.vy = -Math.abs(b.vy) * 0.4;
+          b.vx = b.vx * 0.6 - 0.3;
+        }
       } else {
         // Rest: heavy damping, rolls toward drain
         b.vy = -Math.abs(b.vy) * 0.15;
@@ -817,9 +823,16 @@ function update4() {
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 20) {
       b.y = surfY - 3;
       if (g.rightPaddle) {
-        b.vy = -Math.abs(b.vy) * 0.7;
-        b.vx = b.vx * 0.7 - t * 0.8;
-        if (rightJust && Math.abs(b.vy) < 2.5) b.vy = -2.5;
+        if (rightJust) {
+          // Just pressed: strong launch upward
+          b.vy = -Math.abs(b.vy);
+          b.vx -= t * 1.1;
+          if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+        } else {
+          // Held: damped bounce, ball rolls outward toward pivot (x=157)
+          b.vy = -Math.abs(b.vy) * 0.4;
+          b.vx = b.vx * 0.6 + 0.3;
+        }
       } else {
         b.vy = -Math.abs(b.vy) * 0.15;
         b.vx = b.vx * 0.5 - 0.4;
