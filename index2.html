@@ -74,6 +74,8 @@ const POCKETS4_POS = [
 ];
 let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
+const BUMPERS4 = [[97, 135], [117, 135], [107, 157]];
+let s4BumperFlash = [0, 0, 0];
 
 function launchStage(n) {
   if (n === 1) newGame1();
@@ -645,28 +647,32 @@ function drawGraceS4(cx, cy, helmetOff) {
 }
 
 function drawRockyPaddle4(cx, cy, leftUp, rightUp) {
-  px(cx-11, cy-6,  22, 12, 9);
-  px(cx-9,  cy-9,  18, 18, 9);
-  px(cx-13, cy-2,  26,  4, 9);
-  px(cx-4, cy-2, 4, 4, 1); px(cx+3, cy+2, 3, 3, 1); px(cx-7, cy+2, 3, 3, 1);
-  px(cx-2, cy-5, 4, 4, 12);
-  px(cx-18, cy+7, 8, 2, 9); px(cx+13, cy+3, 9, 2, 9); px(cx+11, cy+8, 8, 2, 9);
-  // Left paddle
+  // Pivot blocks (hinge points)
+  px(cx-10, cy-5, 8, 8, 3);
+  px(cx+3,  cy-5, 8, 8, 3);
+  // Left paddle (cyan when active)
   if (leftUp) {
-    px(cx-17, cy-6,  8, 3, 9); px(cx-25, cy-10, 8, 3, 9);
-    px(cx-33, cy-14, 8, 3, 9); px(cx-41, cy-18, 8, 3, 9);
-    px(cx-49, cy-22, 8, 3, 9);
+    px(cx-17, cy-6,  8, 3, 12); px(cx-25, cy-10, 8, 3, 12);
+    px(cx-33, cy-14, 8, 3, 12); px(cx-41, cy-18, 8, 3, 12);
+    px(cx-49, cy-22, 8, 3, 12);
   } else {
     px(cx-49, cy-3, 41, 3, 9);
   }
-  // Right paddle
+  // Right paddle (cyan when active)
   if (rightUp) {
-    px(cx+9,  cy-6,  8, 3, 9); px(cx+17, cy-10, 8, 3, 9);
-    px(cx+25, cy-14, 8, 3, 9); px(cx+33, cy-18, 8, 3, 9);
-    px(cx+41, cy-22, 8, 3, 9);
+    px(cx+9,  cy-6,  8, 3, 12); px(cx+17, cy-10, 8, 3, 12);
+    px(cx+25, cy-14, 8, 3, 12); px(cx+33, cy-18, 8, 3, 12);
+    px(cx+41, cy-22, 8, 3, 12);
   } else {
     px(cx+9, cy-3, 41, 3, 9);
   }
+}
+
+function drawBumper4(bx, by, flash) {
+  px(bx-6, by-6, 12, 12, flash ? 4 : 3);
+  px(bx-4, by-4,  8,  8, 0);
+  px(bx-3, by-3,  6,  6, flash ? 5 : 9);
+  px(bx-1, by-1,  2,  2, flash ? 6 : 10);
 }
 
 function newGame4() {
@@ -676,6 +682,7 @@ function newGame4() {
          pockets: Array(12).fill(false) };
   winTick = 0; s4FlashTimer = 0;
   s4LeftTouch = false; s4RightTouch = false;
+  s4BumperFlash = [0, 0, 0];
   state = 'PLAY4';
   hint.textContent = IS_TOUCH ? '左右タップ=パドル' : 'Z=左  X=右';
 }
@@ -683,18 +690,39 @@ function newGame4() {
 function update4() {
   const g = gs; g.frame++;
   if (s4FlashTimer > 0) s4FlashTimer--;
+  for (let i = 0; i < 3; i++) if (s4BumperFlash[i] > 0) s4BumperFlash[i]--;
 
   g.leftPaddle  = !!keys['z'] || !!keys['Z'] || s4LeftTouch;
   g.rightPaddle = !!keys['x'] || !!keys['X'] || s4RightTouch;
 
   const b = g.ball;
-  b.vy += 0.08; // gravity
+  b.vy += 0.10; // gravity
+  if (b.vy > 7) b.vy = 7;
   b.x += b.vx; b.y += b.vy;
 
   // Wall bounces
   if (b.x < 58)  { b.x = 58;  b.vx =  Math.abs(b.vx); }
   if (b.x > 155) { b.x = 155; b.vx = -Math.abs(b.vx); }
   if (b.y < 14)  { b.y = 14;  b.vy =  Math.abs(b.vy); }
+
+  // Bumper collisions
+  for (let i = 0; i < BUMPERS4.length; i++) {
+    const [bx, by] = BUMPERS4[i];
+    const dx = b.x - bx, dy = b.y - by;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 9 && dist > 0.1) {
+      const nx = dx/dist, ny = dy/dist;
+      const dot = b.vx*nx + b.vy*ny;
+      if (dot < 0) {
+        b.vx -= 2*dot*nx * 1.2;
+        b.vy -= 2*dot*ny * 1.2;
+        b.vx = Math.max(-6, Math.min(6, b.vx));
+        b.vy = Math.max(-7, Math.min(7, b.vy));
+      }
+      b.x = bx + nx*10; b.y = by + ny*10;
+      s4BumperFlash[i] = 12;
+    }
+  }
 
   // Paddle hit zones
   const cy4 = 210;
@@ -704,14 +732,14 @@ function update4() {
   if (b.x >= 60 && b.x <= 96 && b.y+2 >= lPadY && b.y-2 <= lPadY+3 && b.vy > 0) {
     b.vy = -Math.abs(b.vy);
     if (g.leftPaddle) b.vx -= 1.2;
-    b.vx = Math.max(-5, Math.min(5, b.vx));
-    if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+    b.vx = Math.max(-6, Math.min(6, b.vx));
+    if (Math.abs(b.vy) < 5.5) b.vy = -5.5;
   }
   if (b.x >= 118 && b.x <= 154 && b.y+2 >= rPadY && b.y-2 <= rPadY+3 && b.vy > 0) {
     b.vy = -Math.abs(b.vy);
     if (g.rightPaddle) b.vx += 1.2;
-    b.vx = Math.max(-5, Math.min(5, b.vx));
-    if (Math.abs(b.vy) < 2.5) b.vy = -2.5;
+    b.vx = Math.max(-6, Math.min(6, b.vx));
+    if (Math.abs(b.vy) < 5.5) b.vy = -5.5;
   }
 
   // Fall off bottom
@@ -721,17 +749,17 @@ function update4() {
     if (g.miss >= 3) { state = 'GAMEOVER'; return; }
     b.x = 107; b.y = 170;
     b.vx = (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5);
-    b.vy = -(4.5 + Math.random() * 1.5);
+    b.vy = -(5.5 + Math.random() * 1.0);
   }
 
-  // Pocket collision
+  // Pocket collision — ball must be moving upward (vy < 0)
   for (let i = 0; i < 12; i++) {
     if (g.pockets[i]) continue;
     const [bx, by] = POCKETS4_POS[i];
-    if (Math.abs(b.x - bx) < 8 && Math.abs(b.y - by) < 7) {
+    if (Math.abs(b.x - bx) < 5 && Math.abs(b.y - by) < 5 && b.vy < 0) {
       g.pockets[i] = true;
-      b.vy = -Math.abs(b.vy);
-      if (Math.abs(b.vy) < 2) b.vy = -2;
+      b.vy = Math.abs(b.vy);  // bounce back down
+      if (b.vy < 3) b.vy = 3;
       if (g.pockets.every(p => p)) { state = 'WIN4'; winTick = 0; return; }
     }
   }
@@ -918,6 +946,8 @@ function loop() {
     ctx.fillStyle = P[10]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('O', 80, 97); ctx.fillText('O', 134, 97);
     ctx.textAlign = 'left';
+    // Bumpers
+    for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], s4BumperFlash[i] > 0);
     // Electron (ball)
     px(g.ball.x-2, g.ball.y-2, 4, 4, 6);
     px(g.ball.x-1, g.ball.y-1, 2, 2, 11);
@@ -940,6 +970,8 @@ function loop() {
     drawGraceS4(28, 185, true);
     ctx.fillStyle = P[9]; ctx.font = '5px monospace'; ctx.textAlign = 'center';
     ctx.fillText('GRACE', 28, 14); ctx.textAlign = 'left';
+    // Bumpers (dim in win screen)
+    for (let i = 0; i < 3; i++) drawBumper4(BUMPERS4[i][0], BUMPERS4[i][1], false);
     // All pockets flashing
     const flash4 = (winTick % 20 < 10);
     px(78, 63, 4, 4, flash4 ? 6 : 5); px(132, 63, 4, 4, flash4 ? 6 : 5);
