@@ -833,7 +833,7 @@ function update4() {
   const cy4 = 210;
   // Left paddle: normal range x=58-100; on just-press extends to x=107 (gap rescue)
   const leftXMax = leftJust ? 107 : 100;
-  if (b.x >= 58 && b.x <= leftXMax && b.vy > 0) {
+  if (b.x >= 58 && b.x <= leftXMax && (b.vy > 0 || leftJust)) {
     const t = Math.min((b.x - 58) / 42, 1);
     const surfY = g.leftPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 30) {
@@ -858,7 +858,7 @@ function update4() {
   }
   // Right paddle: normal range x=114-157; on just-press extends to x=107 (gap rescue)
   const rightXMin = rightJust ? 107 : 114;
-  if (b.x >= rightXMin && b.x <= W-3 && b.vy > 0) {
+  if (b.x >= rightXMin && b.x <= W-3 && (b.vy > 0 || rightJust)) {
     const t = Math.min((W-3 - b.x) / 43, 1);
     const surfY = g.rightPaddle ? (cy4 - t * 16) : (cy4 - 2 + t * 10);
     if (b.y + 2 >= surfY && b.y + 2 < surfY + 30) {
