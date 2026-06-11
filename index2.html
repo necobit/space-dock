@@ -959,6 +959,16 @@ function update5() {
   }
 }
 
+function drawInterior5() {
+  const CS = 8;
+  // Fill play area with spaceship interior color
+  ctx.fillStyle = P[1]; ctx.fillRect(0, 8, W, 29*CS);
+  // Faint floor tile grid
+  ctx.fillStyle = P[2];
+  for (let gx = CS; gx < W; gx += CS) ctx.fillRect(gx, 8, 1, 29*CS);
+  for (let gy = 8; gy <= 8+29*CS; gy += CS) ctx.fillRect(0, gy, W, 1);
+}
+
 function drawWalls5() {
   const CS = 8;
   for (const w of WALLS5) {
@@ -1306,12 +1316,14 @@ function loop() {
   }
   else if (state === 'PLAY5') {
     update5();
+    drawInterior5();
     drawWalls5();
     drawSnake5();
     drawHUD5();
   }
   else if (state === 'WIN5') {
     winTick++;
+    drawInterior5();
     drawWalls5();
     ctx.textAlign = 'center';
     ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 5', W/2, 80);
@@ -1330,7 +1342,7 @@ function loop() {
   }
   else if (state === 'GAMEOVER') {
     const sn = gs ? gs.stageNum : 1;
-    if (sn === 5) drawWalls5();
+    if (sn === 5) { drawInterior5(); drawWalls5(); }
     if (sn === 4 && gs) {
       const g = gs;
       px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
