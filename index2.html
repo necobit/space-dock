@@ -230,7 +230,8 @@ function handleAction() {
   if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3' || state === 'PLAY4' || state === 'INTRO4') return;
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
-  if (state === 'WIN3' || state === 'WIN4' || state === 'GAMEOVER') {
+  if (state === 'WIN3') { if (winTick > 200) newGame4(); return; }
+  if (state === 'WIN4' || state === 'GAMEOVER') {
     if (state === 'GAMEOVER' && gameoverLockTimer > 0) return;
     state = 'SELECT'; selectedStage = 1;
     hint.textContent = IS_TOUCH ? 'TAP to select' : 'ARROWS + SPACE';
