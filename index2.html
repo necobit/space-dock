@@ -78,6 +78,18 @@ let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
 let s4LeftFlipTimer = 0, s4RightFlipTimer = 0;
 const BUMPERS4 = [[85, 155], [130, 155], [80, 50], [134, 50]];
+const WALLS5 = [
+  // Corner cuts (angled corners = spaceship hull feel)
+  {x:0,y:1},{x:1,y:1},{x:0,y:2},          // top-left corner
+  {x:19,y:1},{x:18,y:1},{x:19,y:2},        // top-right corner
+  {x:0,y:28},{x:1,y:28},{x:0,y:27},        // bottom-left corner
+  {x:19,y:28},{x:18,y:28},{x:19,y:27},     // bottom-right corner
+  // Internal obstacles (equipment racks / bulkheads)
+  {x:1,y:9},{x:1,y:10},{x:1,y:11},         // left rack
+  {x:18,y:17},{x:18,y:18},{x:18,y:19},     // right rack
+  {x:9,y:7},{x:10,y:7},                     // top-center post
+  {x:9,y:21},{x:10,y:21},                   // bottom-center post
+];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
 let s5MoveTimer = 0;
@@ -919,7 +931,7 @@ function spawnItem5() {
   do {
     ix = Math.floor(Math.random() * 20);
     iy = 1 + Math.floor(Math.random() * 27); // cells 1..27 (first row is HUD)
-  } while (g.snake.some(s => s.x===ix && s.y===iy));
+  } while (g.snake.some(s => s.x===ix && s.y===iy) || WALLS5.some(w => w.x===ix && w.y===iy));
   g.item = {x:ix, y:iy};
 }
 
@@ -935,7 +947,7 @@ function update5() {
   // Wall collision
   if (nx < 0 || nx >= 20 || ny < 1 || ny >= 29) { state = 'GAMEOVER'; return; }
   // Self collision
-  if (g.snake.some(s => s.x===nx && s.y===ny)) { state = 'GAMEOVER'; return; }
+  if (g.snake.some(s => s.x===nx && s.y===ny) || WALLS5.some(w => w.x===nx && w.y===ny)) { state = 'GAMEOVER'; return; }
   // Move
   const grow = g.item && nx===g.item.x && ny===g.item.y;
   g.snake.unshift({x:nx, y:ny});
@@ -945,6 +957,27 @@ function update5() {
     if (g.snake.length >= 15) { state = 'WIN5'; winTick = 0; return; }
     spawnItem5();
   }
+}
+
+function drawWalls5() {
+  const CS = 8;
+  for (const w of WALLS5) {
+    const wx = w.x * CS, wy = 8 + w.y * CS;
+    px(wx,    wy,    CS, CS, 2);        // dark navy base
+    px(wx+1,  wy,    CS-2, 1, 3);      // top edge highlight
+    px(wx,    wy+1,  1, CS-2, 3);      // left edge highlight
+    px(wx+1,  wy+1,  2, 2, 9);         // rivet top-left (gray)
+    px(wx+CS-3, wy+CS-3, 2, 2, 1);     // rivet bottom-right (shadow)
+  }
+  // Draw spaceship border frame (visual only — actual boundary enforced by collision code)
+  // Top wall strip (y=0 row, above the grid)
+  px(0, 8, W, 1, 3);
+  // Bottom wall strip
+  px(0, 8 + 29*CS, W, 1, 3);  // one cell below grid bottom
+  // Left wall strip
+  px(0, 8, 1, 28*CS, 3);
+  // Right wall strip
+  px(W-1, 8, 1, 28*CS, 3);
 }
 
 function drawSnake5() {
@@ -1273,11 +1306,13 @@ function loop() {
   }
   else if (state === 'PLAY5') {
     update5();
+    drawWalls5();
     drawSnake5();
     drawHUD5();
   }
   else if (state === 'WIN5') {
     winTick++;
+    drawWalls5();
     ctx.textAlign = 'center';
     ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 5', W/2, 80);
     ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', W/2, 95);
@@ -1295,6 +1330,7 @@ function loop() {
   }
   else if (state === 'GAMEOVER') {
     const sn = gs ? gs.stageNum : 1;
+    if (sn === 5) drawWalls5();
     if (sn === 4 && gs) {
       const g = gs;
       px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
