@@ -78,14 +78,30 @@ let s4FlashTimer = 0;
 let s4LeftTouch = false, s4RightTouch = false;
 let s4LeftFlipTimer = 0, s4RightFlipTimer = 0;
 const BUMPERS4 = [[85, 155], [130, 155], [80, 50], [134, 50]];
+const WALLS5 = [
+  // Corner cuts (angled corners = spaceship hull feel)
+  {x:0,y:1},{x:1,y:1},{x:0,y:2},          // top-left corner
+  {x:19,y:1},{x:18,y:1},{x:19,y:2},        // top-right corner
+  {x:0,y:28},{x:1,y:28},{x:0,y:27},        // bottom-left corner
+  {x:19,y:28},{x:18,y:28},{x:19,y:27},     // bottom-right corner
+  // Internal obstacles (equipment racks / bulkheads)
+  {x:1,y:9},{x:1,y:10},{x:1,y:11},         // left rack
+  {x:18,y:17},{x:18,y:18},{x:18,y:19},     // right rack
+  {x:9,y:7},{x:10,y:7},                     // top-center post
+  {x:9,y:21},{x:10,y:21},                   // bottom-center post
+];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
+let s5MoveTimer = 0;
+let s5Dir = { x: 1, y: 0 }, s5NextDir = { x: 1, y: 0 };
+let s5CheerTimer = 0;
 
 function launchStage(n) {
   if (n === 1) newGame1();
   else if (n === 2) newGame2();
   else if (n === 3) newGame3();
-  else newGame4();
+  else if (n === 4) newGame4();
+  else newGame5();
 }
 
 function newGame1() {
@@ -128,8 +144,8 @@ document.addEventListener('keydown', e => {
   keys[e.key] = true;
   if (e.key === ' ' || e.key === 'Enter') { handleAction(); e.preventDefault(); }
   if (state === 'SELECT') {
-    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { selectedStage = selectedStage > 1 ? selectedStage - 1 : 4; e.preventDefault(); }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { selectedStage = selectedStage < 4 ? selectedStage + 1 : 1; e.preventDefault(); }
+    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { selectedStage = selectedStage > 1 ? selectedStage - 1 : 5; e.preventDefault(); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { selectedStage = selectedStage < 5 ? selectedStage + 1 : 1; e.preventDefault(); }
   }
   if (state === 'PLAY3') {
     if (e.key === 'ArrowLeft')  { handleInput3('left');  e.preventDefault(); }
@@ -140,12 +156,20 @@ document.addEventListener('keydown', e => {
   if (state === 'PLAY4') {
     if (e.key === 'z' || e.key === 'Z' || e.key === 'x' || e.key === 'X') e.preventDefault();
   }
+  if (state === 'PLAY5') {
+    if (e.key === 'ArrowLeft'  && s5Dir.x !== 1)  { s5NextDir = {x:-1,y:0}; e.preventDefault(); }
+    if (e.key === 'ArrowRight' && s5Dir.x !== -1) { s5NextDir = {x:1,y:0};  e.preventDefault(); }
+    if (e.key === 'ArrowUp'    && s5Dir.y !== 1)  { s5NextDir = {x:0,y:-1}; e.preventDefault(); }
+    if (e.key === 'ArrowDown'  && s5Dir.y !== -1) { s5NextDir = {x:0,y:1};  e.preventDefault(); }
+  }
 });
 document.addEventListener('keyup', e => { keys[e.key] = false; });
 
 let touchX = null;
+let touchY = null;
 C.addEventListener('touchstart', e => {
   touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
   if (state === 'PLAY3') {
     const rect = C.getBoundingClientRect();
     const gx = (e.touches[0].clientX - rect.left) / SCALE;
@@ -161,11 +185,14 @@ C.addEventListener('touchstart', e => {
   } else if (state === 'SELECT') {
     const rect = C.getBoundingClientRect();
     const gy = (e.touches[0].clientY - rect.top) / SCALE;
-    if      (gy < 78)  { selectedStage = 1; launchStage(1); }
-    else if (gy < 98)  { selectedStage = 2; launchStage(2); }
-    else if (gy < 118) { selectedStage = 3; launchStage(3); }
-    else if (gy < 138) { selectedStage = 4; launchStage(4); }
+    if      (gy < 66)  { selectedStage = 1; launchStage(1); }
+    else if (gy < 82)  { selectedStage = 2; launchStage(2); }
+    else if (gy < 98)  { selectedStage = 3; launchStage(3); }
+    else if (gy < 114) { selectedStage = 4; launchStage(4); }
+    else if (gy < 130) { selectedStage = 5; launchStage(5); }
     else               { launchStage(selectedStage); }
+  } else if (state === 'PLAY5') {
+    // swipe start recorded above (touchX/touchY); direction decided in touchend
   } else if (state !== 'PLAY1') {
     handleAction();
   }
@@ -185,7 +212,19 @@ C.addEventListener('touchmove', e => {
   e.preventDefault();
 }, { passive: false });
 C.addEventListener('touchend', e => {
+  if (state === 'PLAY5' && touchX !== null && touchY !== null) {
+    const dx = e.changedTouches[0].clientX - touchX;
+    const dy = e.changedTouches[0].clientY - touchY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 15) {
+      if (dx > 0 && s5Dir.x !== -1) s5NextDir = {x:1,y:0};
+      else if (dx < 0 && s5Dir.x !== 1) s5NextDir = {x:-1,y:0};
+    } else if (Math.abs(dy) > 15) {
+      if (dy > 0 && s5Dir.y !== -1) s5NextDir = {x:0,y:1};
+      else if (dy < 0 && s5Dir.y !== 1) s5NextDir = {x:0,y:-1};
+    }
+  }
   touchX = null;
+  touchY = null;
   if (state === 'PLAY4') {
     s4LeftTouch = false; s4RightTouch = false;
     for (let i = 0; i < e.touches.length; i++) {
@@ -216,10 +255,11 @@ C.addEventListener('click', e => {
   } else if (state === 'SELECT') {
     const rect = C.getBoundingClientRect();
     const gy = (e.clientY - rect.top) / SCALE;
-    if      (gy < 78)  { selectedStage = 1; launchStage(1); }
-    else if (gy < 98)  { selectedStage = 2; launchStage(2); }
-    else if (gy < 118) { selectedStage = 3; launchStage(3); }
-    else if (gy < 138) { selectedStage = 4; launchStage(4); }
+    if      (gy < 66)  { selectedStage = 1; launchStage(1); }
+    else if (gy < 82)  { selectedStage = 2; launchStage(2); }
+    else if (gy < 98)  { selectedStage = 3; launchStage(3); }
+    else if (gy < 114) { selectedStage = 4; launchStage(4); }
+    else if (gy < 130) { selectedStage = 5; launchStage(5); }
     else               { launchStage(selectedStage); }
   } else {
     handleAction();
@@ -227,9 +267,10 @@ C.addEventListener('click', e => {
 });
 
 function handleAction() {
-  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3' || state === 'PLAY4' || state === 'INTRO4') return;
+  if (state === 'WIN_ANIM' || state === 'WIN1' || state === 'WIN2' || state === 'PLAY3' || state === 'COUNTDOWN3' || state === 'GUIDE3' || state === 'PLAY4' || state === 'INTRO4' || state === 'PLAY5' || state === 'INTRO5') return;
   if (state === 'PLAY2')    { fireCapsule(); return; }
   if (state === 'PLAY1')    return;
+  if (state === 'WIN5') { if (winTick > 200) { state = 'SELECT'; selectedStage = 1; hint.textContent = IS_TOUCH ? 'TAP to select' : 'ARROWS + SPACE'; } return; }
   if (state === 'WIN3') { if (winTick > 200) newGame4(); return; }
   if (state === 'WIN4' || state === 'GAMEOVER') {
     if (state === 'GAMEOVER' && gameoverLockTimer > 0) return;
@@ -865,6 +906,143 @@ function update4() {
   }
 }
 
+// --- Stage 5 ---
+// Snake: Rocky collects space debris to build a tether/chain for the Hail Mary
+
+function newGame5() {
+  const startX = 10, startY = 14;
+  gs = {
+    stageNum: 5,
+    snake: [{x:startX,y:startY},{x:startX-1,y:startY},{x:startX-2,y:startY}],
+    item: null,
+    frame: 0,
+  };
+  s5Dir = {x:1,y:0}; s5NextDir = {x:1,y:0};
+  s5MoveTimer = 0; s5CheerTimer = 0;
+  spawnItem5();
+  winTick = 0;
+  state = 'PLAY5';
+  hint.textContent = IS_TOUCH ? 'SWIPE to move' : '← → ↑ ↓';
+}
+
+function spawnItem5() {
+  const g = gs;
+  let ix, iy;
+  do {
+    ix = Math.floor(Math.random() * 20);
+    iy = 1 + Math.floor(Math.random() * 27); // cells 1..27 (first row is HUD)
+  } while (g.snake.some(s => s.x===ix && s.y===iy) || WALLS5.some(w => w.x===ix && w.y===iy));
+  g.item = {x:ix, y:iy};
+}
+
+function update5() {
+  const g = gs; g.frame++;
+  // Speed increases as chain grows: starts slow, 1 frame faster per 2 items, min 3 frames
+  const baseSpeed = IS_TOUCH ? 10 : 8;
+  const minSpeed = IS_TOUCH ? 4 : 3;
+  const SPEED = Math.max(minSpeed, baseSpeed - Math.floor((g.snake.length - 3) / 2));
+  if (s5CheerTimer > 0) s5CheerTimer--;
+  if (++s5MoveTimer < SPEED) return;
+  s5MoveTimer = 0;
+  s5Dir = s5NextDir;
+  const head = g.snake[0];
+  const nx = head.x + s5Dir.x, ny = head.y + s5Dir.y;
+  // Wall collision
+  if (nx < 0 || nx >= 20 || ny < 1 || ny >= 29) { state = 'GAMEOVER'; return; }
+  // Self collision
+  if (g.snake.some(s => s.x===nx && s.y===ny) || WALLS5.some(w => w.x===nx && w.y===ny)) { state = 'GAMEOVER'; return; }
+  // Move
+  const grow = g.item && nx===g.item.x && ny===g.item.y;
+  g.snake.unshift({x:nx, y:ny});
+  if (!grow) g.snake.pop();
+  else {
+    s5CheerTimer = 12;
+    if (g.snake.length >= 15) { state = 'WIN5'; winTick = 0; return; }
+    spawnItem5();
+  }
+}
+
+function drawInterior5() {
+  const CS = 8;
+  // Fill play area with spaceship interior color
+  ctx.fillStyle = P[1]; ctx.fillRect(0, 8, W, 29*CS);
+  // Faint floor tile grid
+  ctx.fillStyle = P[2];
+  for (let gx = CS; gx < W; gx += CS) ctx.fillRect(gx, 8, 1, 29*CS);
+  for (let gy = 8; gy <= 8+29*CS; gy += CS) ctx.fillRect(0, gy, W, 1);
+}
+
+function drawWalls5() {
+  const CS = 8;
+  for (const w of WALLS5) {
+    const wx = w.x * CS, wy = 8 + w.y * CS;
+    px(wx,    wy,    CS, CS, 2);        // dark navy base
+    px(wx+1,  wy,    CS-2, 1, 3);      // top edge highlight
+    px(wx,    wy+1,  1, CS-2, 3);      // left edge highlight
+    px(wx+1,  wy+1,  2, 2, 9);         // rivet top-left (gray)
+    px(wx+CS-3, wy+CS-3, 2, 2, 1);     // rivet bottom-right (shadow)
+  }
+  // Draw spaceship border frame (visual only — actual boundary enforced by collision code)
+  // Top wall strip (y=0 row, above the grid)
+  px(0, 8, W, 1, 3);
+  // Bottom wall strip
+  px(0, 8 + 29*CS, W, 1, 3);  // one cell below grid bottom
+  // Left wall strip
+  px(0, 8, 1, 28*CS, 3);
+  // Right wall strip
+  px(W-1, 8, 1, 28*CS, 3);
+}
+
+function drawSnake5() {
+  const g = gs;
+  const CS = 8; // cell size
+  // Draw body (tail to head-1), skip index 0 (Rocky)
+  for (let i = g.snake.length-1; i >= 1; i--) {
+    const s = g.snake[i];
+    const sx = s.x * CS, sy = 8 + s.y * CS; // offset 8px for HUD
+    // chain link: gray block with highlight
+    px(sx+1, sy+1, CS-2, CS-2, 9);   // gray body
+    px(sx+2, sy+2, 2, 2, 10);        // highlight
+    px(sx+CS-4, sy+CS-4, 2, 2, 1);   // shadow
+  }
+  // Draw Rocky at head (mini version that fits an 8px cell)
+  const h = g.snake[0];
+  const hx = h.x * CS + CS/2, hy = 8 + h.y * CS + CS/2;
+  const rs = s5CheerTimer > 0 ? 'cheer_up' : 'idle';
+  drawMiniRocky5(hx|0, hy|0, rs);
+  // Draw item (floating debris)
+  if (g.item) {
+    const ix = g.item.x * CS, iy = 8 + g.item.y * CS;
+    px(ix+2, iy+2, 4, 4, 9);   // asteroid body
+    px(ix+3, iy+3, 2, 2, 11);  // shine
+  }
+}
+
+function drawMiniRocky5(cx, cy, rs) {
+  // 8×8 mini Rocky: rocky blob with emerald eye
+  px(cx-3, cy-2, 6, 5, 9);   // body
+  px(cx-4, cy-1, 8, 3, 9);   // wide mid
+  px(cx-1, cy-3, 2, 2, 12);  // emerald eye
+  px(cx-1, cy+3, 1, 2, 9);   // leg stub
+  px(cx+1, cy+3, 1, 2, 9);
+  if (rs === 'cheer_up') {
+    px(cx-4, cy-4, 2, 3, 9); // left arm up
+    px(cx+2, cy-4, 2, 3, 9); // right arm up
+  } else {
+    px(cx-4, cy-1, 2, 2, 9); // left arm mid
+    px(cx+2, cy-1, 2, 2, 9); // right arm mid
+  }
+}
+
+function drawHUD5() {
+  const g = gs;
+  ctx.fillStyle = P[12]; ctx.font = '6px monospace';
+  ctx.fillText('CHAIN ' + (g.snake.length-1) + '/14', 2, 8);
+  // length progress bar (no miss counter for snake)
+  px(2, H-4, W-4, 2, 1);
+  px(2, H-4, (((g.snake.length-1)/14)*(W-4))|0, 2, 12);
+}
+
 // --- Main Loop ---
 function loop() {
   if (gameoverLockTimer > 0) gameoverLockTimer--;
@@ -887,15 +1065,15 @@ function loop() {
     ctx.textAlign = 'center';
     ctx.fillStyle = P[12]; ctx.font = '8px monospace';
     ctx.fillText('SELECT STAGE', W/2, 50);
-    for (let i = 1; i <= 4; i++) {
-      const y = 68 + (i-1) * 20;
+    for (let i = 1; i <= 5; i++) {
+      const y = 62 + (i-1) * 16;
       const sel = (i === selectedStage);
       ctx.fillStyle = sel ? P[6] : P[9];
       ctx.font = (sel ? '8px' : '6px') + ' monospace';
       ctx.fillText((sel ? '> ' : '  ') + 'STAGE ' + i, W/2, y);
     }
     ctx.fillStyle = P[3]; ctx.font = '6px monospace';
-    ctx.fillText(IS_TOUCH ? 'TAP to select' : 'ARROWS + SPACE', W/2, 148);
+    ctx.fillText(IS_TOUCH ? 'TAP to select' : 'ARROWS + SPACE', W/2, 144);
     ctx.textAlign = 'left';
   }
   else if (state === 'PLAY1') {
@@ -1139,8 +1317,35 @@ function loop() {
       ctx.textAlign = 'left';
     }
   }
+  else if (state === 'PLAY5') {
+    update5();
+    drawInterior5();
+    drawWalls5();
+    drawSnake5();
+    drawHUD5();
+  }
+  else if (state === 'WIN5') {
+    winTick++;
+    drawInterior5();
+    drawWalls5();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = P[15]; ctx.font = '8px monospace'; ctx.fillText('STAGE 5', W/2, 80);
+    ctx.fillStyle = P[12]; ctx.fillText('CLEAR!', W/2, 95);
+    ctx.fillStyle = P[6]; ctx.font = '6px monospace';
+    ctx.fillText('CHAIN COMPLETE!', W/2, 115);
+    ctx.fillStyle = P[14]; ctx.fillText('HAIL MARY', W/2, 130);
+    ctx.fillStyle = P[11]; ctx.fillText('IS READY!', W/2, 142);
+    // Rocky celebrating at center
+    drawRockyS3(W/2, 185, 'cheer_up');
+    if (winTick > 200) {
+      ctx.fillStyle = P[6]; ctx.font = '6px monospace';
+      ctx.fillText('PRESS SPACE / TAP', W/2, 225);
+    }
+    ctx.textAlign = 'left';
+  }
   else if (state === 'GAMEOVER') {
     const sn = gs ? gs.stageNum : 1;
+    if (sn === 5) { drawInterior5(); drawWalls5(); }
     if (sn === 4 && gs) {
       const g = gs;
       px(0, 0, 57, H, 1); px(55, 0, 2, H, 3);
