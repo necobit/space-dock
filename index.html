@@ -92,7 +92,7 @@ const WALLS5 = [
 ];
 let s4BumperFlash = [0, 0, 0, 0];
 let gameoverLockTimer = 0;
-let s5MoveTimer = 0;
+let s5LastMoveTime = 0;
 let s5Dir = { x: 1, y: 0 }, s5NextDir = { x: 1, y: 0 };
 let s5CheerTimer = 0;
 
@@ -918,7 +918,7 @@ function newGame5() {
     frame: 0,
   };
   s5Dir = {x:1,y:0}; s5NextDir = {x:1,y:0};
-  s5MoveTimer = 0; s5CheerTimer = 0;
+  s5LastMoveTime = 0; s5CheerTimer = 0;
   spawnItem5();
   winTick = 0;
   state = 'PLAY5';
@@ -937,13 +937,14 @@ function spawnItem5() {
 
 function update5() {
   const g = gs; g.frame++;
-  // Speed increases as chain grows: starts slow, 1 frame faster per 2 items, min 3 frames
-  const baseSpeed = 10;
-  const minSpeed = 4;
-  const SPEED = Math.max(minSpeed, baseSpeed - Math.floor((g.snake.length - 3) / 2));
   if (s5CheerTimer > 0) s5CheerTimer--;
-  if (++s5MoveTimer < SPEED) return;
-  s5MoveTimer = 0;
+  // Time-based movement (ms) — frame-rate independent
+  const BASE_MS = 167;  // ~10 frames @ 60fps (slow start)
+  const MIN_MS  = 67;   // ~4 frames @ 60fps (fastest)
+  const INTERVAL_MS = Math.max(MIN_MS, BASE_MS - Math.floor((g.snake.length - 3) / 2) * 17);
+  const now = performance.now();
+  if (s5LastMoveTime !== 0 && now - s5LastMoveTime < INTERVAL_MS) return;
+  s5LastMoveTime = now;
   s5Dir = s5NextDir;
   const head = g.snake[0];
   const nx = head.x + s5Dir.x, ny = head.y + s5Dir.y;
